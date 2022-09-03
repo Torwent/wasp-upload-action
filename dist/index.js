@@ -25,8 +25,8 @@ let scriptArray = [];
 for (let i = 0; i < SCRIPTS.length; i++) {
     let splitStr = SCRIPTS[i].split("=");
     let script = {
-        id: splitStr[1],
-        file: splitStr[0],
+        id: splitStr[0],
+        file: splitStr[1],
     };
     scriptArray.push(script);
 }

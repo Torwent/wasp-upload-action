@@ -26,7 +26,7 @@ inputs:
     required: false
     type: string
   SCRIPTS:
-    description: Origin file
+    description: Script ID and File to upload. The syntax is "SCRIPT_ID1=SCRIPT_FILE1\nSCRIPT_ID2=SCRIPT_FILE2"
     required: true
     type: string
 runs:
