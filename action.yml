@@ -1,5 +1,5 @@
-name: Supabase Upload
-description: Upload files to a supabase bucket
+name: wasp-upload-action
+description: Upload Simba scripts to waspscripts.com
 author: Torwent
 branding: upload
 
@@ -13,11 +13,11 @@ inputs:
     required: true
     type: string
   EMAIL:
-    description: User email with rights to upload files
+    description: User email
     required: true
     type: string
   PASSWORD:
-    description: Password for the user with rights to upload files
+    description: User password
     required: true
     type: string
   PATH:
@@ -30,5 +30,10 @@ inputs:
     required: true
     type: string
 runs:
-  using: node16
-  main: dist/index.js
+  using: "composite"
+  steps:
+    - uses: lots0logs/gh-action-get-changed-files@2.1.4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    - uses: node16
+      main: dist/index.js
