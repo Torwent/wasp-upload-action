@@ -2,8 +2,8 @@ import { getInput } from "@actions/core"
 import { createClient } from "@supabase/supabase-js"
 import fs from "fs"
 
-const SB_URL = getInput("SUPABASE_URL")
-const SB_ANON_KEY = getInput("SUPABASE_ANON_KEY")
+const SB_URL = getInput("SB_URL")
+const SB_ANON_KEY = getInput("SB_ANON_KEY")
 const EMAIL = getInput("EMAIL")
 const PASSWORD = getInput("PASSWORD")
 const PATH = getInput("PATH")
