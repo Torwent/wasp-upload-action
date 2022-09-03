@@ -5,6 +5,14 @@ on:
     branches: master
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - actions/checkout@v2
+      - run: |
+          npm install -g pnpm
+          pnpm install
+          pnpm run build
   test:
     runs-on: ubuntu-latest
     steps:
@@ -14,7 +22,7 @@ jobs:
         run: |
           ls -a
           pwd
-      - name: Supabase upload
+      - name: wasp-upload-action test
         uses: ./
         with:
           SB_URL: ${{ secrets.SB_URL }}
