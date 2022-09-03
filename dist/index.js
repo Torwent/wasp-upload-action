@@ -60,9 +60,12 @@ const getRevision = async (id) => {
     return data[0].revision + 1;
 };
 const updateFileRevision = async (path, revision) => {
+    console.log("here0");
     const contents = fs_1.default.readFileSync(path, "utf8");
+    console.log("here1");
     let fileString = contents.toString();
     let regex = /{\$UNDEF SCRIPT_REVISION}{\$DEFINE SCRIPT_REVISION := '(\d*?)'}/;
+    console.log("here2");
     let replaceStr = "{$UNDEF SCRIPT_REVISION}{$DEFINE SCRIPT_REVISION := '" +
         revision.toString() +
         "'}";
@@ -72,7 +75,9 @@ const updateFileRevision = async (path, revision) => {
     else {
         fileString = replaceStr.concat("\n").concat(fileString);
     }
+    console.log("here3");
     fs_1.default.writeFileSync(path, fileString, "utf8");
+    console.log("here4");
 };
 const uploadFile = async (path, file) => {
     const { error } = await supabase.storage.from("scripts").upload(path, file);
@@ -84,9 +89,9 @@ const run = async (id, path) => {
     if (!isLoggedIn)
         await loginSupabase();
     const rev = await getRevision(id);
+    console.log("Uploading id: ", id, ", revision: ", rev, " file: ", path);
     await updateFileRevision(path, rev);
     const file = fs_1.default.readFileSync(path, "utf8");
-    console.log("Uploading id: ", id, ", revision: ", rev, " file: ", path);
     await (0, exports.uploadFile)(id + "/" + pad(rev, 9) + "/script.simba", file);
     const { error } = await supabase
         .from("scripts")
