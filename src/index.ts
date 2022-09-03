@@ -7,7 +7,7 @@ const SB_ANON_KEY = getInput("SB_ANON_KEY")
 const EMAIL = getInput("EMAIL")
 const PASSWORD = getInput("PASSWORD")
 const PATH = getInput("PATH")
-const SCRIPTS = getInput("SCRIPTS").split(",\n")
+const SCRIPTS = getInput("SCRIPTS").split("\n")
 
 let dirPath = (__dirname + "/" + PATH + "/").replaceAll("//", "/")
 
