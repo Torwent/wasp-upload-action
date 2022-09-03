@@ -30,11 +30,5 @@ inputs:
     required: true
     type: string
 runs:
-  using: "composite"
-  steps:
-    - uses: lots0logs/gh-action-get-changed-files@2.1.4
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-    - runs:
-        using: node16
-        main: dist/index.js
+  using: node16
+  main: dist/index.js
