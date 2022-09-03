@@ -9,9 +9,7 @@ const PASSWORD = getInput("PASSWORD")
 const PATH = getInput("PATH")
 const SCRIPTS = getInput("SCRIPTS").split(",\n")
 
-let dirPath = (process.cwd() + "/" + PATH + "/")
-  .replaceAll("//", "/")
-  .replaceAll("/", "//")
+let dirPath = (__dirname + "/" + PATH + "/").replaceAll("//", "/")
 
 interface Script {
   id: string

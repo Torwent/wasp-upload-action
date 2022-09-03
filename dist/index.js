@@ -20,9 +20,7 @@ const EMAIL = (0, core_1.getInput)("EMAIL");
 const PASSWORD = (0, core_1.getInput)("PASSWORD");
 const PATH = (0, core_1.getInput)("PATH");
 const SCRIPTS = (0, core_1.getInput)("SCRIPTS").split(",\n");
-let dirPath = (process.cwd() + "/" + PATH + "/")
-    .replaceAll("//", "/")
-    .replaceAll("/", "//");
+let dirPath = (__dirname + "/" + PATH + "/").replaceAll("//", "/");
 let scriptArray = [];
 for (let i = 0; i < SCRIPTS.length; i++) {
     let splitStr = SCRIPTS[i].split("=");
