@@ -36,4 +36,5 @@ runs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
     - uses: node16
-      main: dist/index.js
+      with:
+        main: dist/index.js
