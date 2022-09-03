@@ -1,0 +1,4 @@
+{$UNDEF SCRIPT_REVISION}{$DEFINE SCRIPT_REVISION := '1'}
+begin
+	Hello world2!
+end;
