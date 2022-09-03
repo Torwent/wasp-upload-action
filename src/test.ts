@@ -2,14 +2,13 @@ import { getInput } from "@actions/core"
 import { createClient } from "@supabase/supabase-js"
 import fs from "fs"
 
-const SB_URL = getInput("SUPABASE_URL")
-const SB_ANON_KEY = getInput("SUPABASE_ANON_KEY")
-const EMAIL = getInput("EMAIL")
-const PASSWORD = getInput("PASSWORD")
-const PATH = getInput("PATH")
-const SCRIPTS = getInput("SCRIPTS").split(",\n")
-
-let dirPath = (process.cwd() + "/" + PATH + "/").replaceAll("//", "/")
+const SB_URL = "SUPABASE_URL"
+const SB_ANON_KEY = "SUPABASE_ANON_KEY"
+const EMAIL = "EMAIL"
+const PASSWORD = "PASSWORD"
+const SCRIPTS_INPUT = `SCRIPT_ID1=test1.simba,
+SCRIPT_ID2=test2.simba`
+const SCRIPTS = SCRIPTS_INPUT.split(",\n")
 
 interface Script {
   id: string
@@ -20,8 +19,8 @@ let scriptArray: Script[] = []
 for (let i = 0; i < SCRIPTS.length; i++) {
   let splitStr = SCRIPTS[i].split("=")
   let script: Script = {
-    id: splitStr[1],
-    file: splitStr[0],
+    id: splitStr[0],
+    file: splitStr[1],
   }
   scriptArray.push(script)
 }
@@ -43,7 +42,7 @@ const loginSupabase = async () => {
 
   if (error) return console.error(error)
   isLoggedIn = true
-  console.log("Logged in to waspscripts.com as: ", EMAIL)
+  console.log("Logged in to waspscripts.com as: ", getInput("EMAIL"))
 }
 
 const getRevision = async (id: string) => {
@@ -106,7 +105,5 @@ const run = async (id: string, path: string) => {
 }
 
 for (let i = 0; i < scriptArray.length; i++) {
-  run(scriptArray[i].id, dirPath + scriptArray[i].file)
+  run(scriptArray[i].id, process.cwd() + "/test_files/" + scriptArray[i].file)
 }
-
-if (isLoggedIn) supabase.auth.signOut()

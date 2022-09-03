@@ -1,2 +1,12 @@
+
+# Dependency directory
 node_modules
-test.ts
+
+# TypeScript v1 declaration files
+typings/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Ignore built ts files
+lib/**/*
