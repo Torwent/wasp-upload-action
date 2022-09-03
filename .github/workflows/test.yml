@@ -1,0 +1,27 @@
+name: wasp-upload-action
+
+on:
+  push:
+    branches: master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Show system
+        shell: bash
+        run: |
+          ls -a
+          pwd
+      - name: Supabase upload
+        uses: ./
+        with:
+          SB_URL: ${{ secrets.SB_URL }}
+          SB_ANON_KEY: ${{ secrets.SB_ANON_KEY }}
+          EMAIL: ${{ secrets.WS_EMAIL }}
+          PASSWORD: ${{ secrets.WS_PASSWORD }}
+          PATH: "/test_files"
+          SCRIPTS: |
+            6d828069-d5d6-48d0-9e3b-ba7d8de14106=test1.simba
+            7b173a61-b3a0-4010-ac77-16e36645387d=test2.simba

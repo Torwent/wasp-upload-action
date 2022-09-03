@@ -1,0 +1,32 @@
+{
+  "name": "wasp-upload-action",
+  "version": "1.0.0",
+  "description": "GitHub Action to upload simba scripts to waspscripts.com",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "dev": "ts-node-dev src/index.ts",
+    "prod": "node dist/index.js",
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "ts-node src/test.ts",
+    "dev-test": "ts-node-dev src/test.ts"
+  },
+  "keywords": [],
+  "author": "Torwent",
+  "license": "ISC",
+  "dependencies": {
+    "@actions/core": "^1.9.1",
+    "@supabase/supabase-js": "^1.35.6",
+    "blob": "^0.1.0",
+    "fs": "0.0.1-security",
+    "glob": "^8.0.3",
+    "tslib": "^2.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.7.14",
+    "ts-node": "^10.9.1",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^4.8.2"
+  }
+}

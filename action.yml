@@ -1,0 +1,34 @@
+name: Supabase Upload
+description: Upload files to a supabase bucket
+author: Torwent
+branding: upload
+
+inputs:
+  SB_URL:
+    description: Supabase URL
+    required: true
+    type: string
+  SB_ANON_KEY:
+    description: Supabase ANON Key
+    required: true
+    type: string
+  EMAIL:
+    description: User email with rights to upload files
+    required: true
+    type: string
+  PASSWORD:
+    description: Password for the user with rights to upload files
+    required: true
+    type: string
+  PATH:
+    default: /
+    description: Directory path where the files are located
+    required: false
+    type: string
+  SCRIPTS:
+    description: Origin file
+    required: true
+    type: string
+runs:
+  using: node16
+  main: dist/index.js
