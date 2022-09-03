@@ -18,6 +18,7 @@ jobs:
           ls -a
           pwd
           ls test_files -a
+          ls /home
       - name: wasp-upload-action test
         uses: ./
         with:
