@@ -19,7 +19,7 @@ const SB_ANON_KEY = (0, core_1.getInput)("SB_ANON_KEY");
 const EMAIL = (0, core_1.getInput)("EMAIL");
 const PASSWORD = (0, core_1.getInput)("PASSWORD");
 const PATH = (0, core_1.getInput)("PATH");
-const SCRIPTS = (0, core_1.getInput)("SCRIPTS").replaceAll(/\s/g, "").split("\n");
+const SCRIPTS = (0, core_1.getInput)("SCRIPTS").replaceAll(/ /g, "").split("\n");
 let dirPath = process.cwd() + "/";
 if (PATH !== "")
     dirPath += PATH + "/";

@@ -1,4 +1,5 @@
-
+# Ignore test files
+src/test.ts
 # Dependency directory
 node_modules
 
