@@ -9,7 +9,9 @@ const PASSWORD = getInput("PASSWORD")
 const PATH = getInput("PATH")
 const SCRIPTS = getInput("SCRIPTS").split(",\n")
 
-let dirPath = (process.cwd() + "/" + PATH + "/").replaceAll("//", "/")
+let dirPath = (process.cwd() + "/" + PATH + "/")
+  .replaceAll("//", "/")
+  .replaceAll("/", "//")
 
 interface Script {
   id: string
@@ -60,12 +62,11 @@ const getRevision = async (id: string) => {
 }
 
 const updateFileRevision = async (path: string, revision: number) => {
-  console.log("here0")
   const contents = fs.readFileSync(path, "utf8")
-  console.log("here1")
+
   let fileString = contents.toString()
   let regex = /{\$UNDEF SCRIPT_REVISION}{\$DEFINE SCRIPT_REVISION := '(\d*?)'}/
-  console.log("here2")
+
   let replaceStr =
     "{$UNDEF SCRIPT_REVISION}{$DEFINE SCRIPT_REVISION := '" +
     revision.toString() +
@@ -77,9 +78,7 @@ const updateFileRevision = async (path: string, revision: number) => {
     fileString = replaceStr.concat("\n").concat(fileString)
   }
 
-  console.log("here3")
   fs.writeFileSync(path, fileString, "utf8")
-  console.log("here4")
 }
 
 export const uploadFile = async (path: string, file: string) => {

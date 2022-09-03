@@ -20,7 +20,9 @@ const EMAIL = (0, core_1.getInput)("EMAIL");
 const PASSWORD = (0, core_1.getInput)("PASSWORD");
 const PATH = (0, core_1.getInput)("PATH");
 const SCRIPTS = (0, core_1.getInput)("SCRIPTS").split(",\n");
-let dirPath = (process.cwd() + "/" + PATH + "/").replaceAll("//", "/");
+let dirPath = (process.cwd() + "/" + PATH + "/")
+    .replaceAll("//", "/")
+    .replaceAll("/", "//");
 let scriptArray = [];
 for (let i = 0; i < SCRIPTS.length; i++) {
     let splitStr = SCRIPTS[i].split("=");
@@ -60,12 +62,9 @@ const getRevision = async (id) => {
     return data[0].revision + 1;
 };
 const updateFileRevision = async (path, revision) => {
-    console.log("here0");
     const contents = fs_1.default.readFileSync(path, "utf8");
-    console.log("here1");
     let fileString = contents.toString();
     let regex = /{\$UNDEF SCRIPT_REVISION}{\$DEFINE SCRIPT_REVISION := '(\d*?)'}/;
-    console.log("here2");
     let replaceStr = "{$UNDEF SCRIPT_REVISION}{$DEFINE SCRIPT_REVISION := '" +
         revision.toString() +
         "'}";
@@ -75,9 +74,7 @@ const updateFileRevision = async (path, revision) => {
     else {
         fileString = replaceStr.concat("\n").concat(fileString);
     }
-    console.log("here3");
     fs_1.default.writeFileSync(path, fileString, "utf8");
-    console.log("here4");
 };
 const uploadFile = async (path, file) => {
     const { error } = await supabase.storage.from("scripts").upload(path, file);
