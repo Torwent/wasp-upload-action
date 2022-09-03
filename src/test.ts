@@ -2,13 +2,17 @@ import { getInput } from "@actions/core"
 import { createClient } from "@supabase/supabase-js"
 import fs from "fs"
 
-const SB_URL = "SUPABASE_URL"
-const SB_ANON_KEY = "SUPABASE_ANON_KEY"
+const SB_URL = "SB_URL"
+const SB_ANON_KEY = "SB_ANON_KEY"
 const EMAIL = "EMAIL"
 const PASSWORD = "PASSWORD"
-const SCRIPTS_INPUT = `SCRIPT_ID1=test1.simba,
+const PATH = ""
+const SCRIPTS_INPUT = `SCRIPT_ID1=test1.simba
 SCRIPT_ID2=test2.simba`
-const SCRIPTS = SCRIPTS_INPUT.split(",\n")
+const SCRIPTS = SCRIPTS_INPUT.split("\n")
+
+let dirPath = process.cwd() + "/"
+if (PATH !== "") dirPath += PATH + "/"
 
 interface Script {
   id: string
@@ -42,7 +46,7 @@ const loginSupabase = async () => {
 
   if (error) return console.error(error)
   isLoggedIn = true
-  console.log("Logged in to waspscripts.com as: ", getInput("EMAIL"))
+  console.log("Logged in to waspscripts.com as: ", EMAIL)
 }
 
 const getRevision = async (id: string) => {
@@ -88,12 +92,10 @@ const run = async (id: string, path: string) => {
   if (!isLoggedIn) await loginSupabase()
 
   const rev = await getRevision(id)
-
+  console.log("Uploading id: ", id, ", revision: ", rev, " file: ", path)
   await updateFileRevision(path, rev)
 
   const file = fs.readFileSync(path, "utf8")
-
-  console.log("Uploading id: ", id, ", revision: ", rev, " file: ", path)
 
   await uploadFile(id + "/" + pad(rev, 9) + "/script.simba", file)
 
@@ -105,5 +107,7 @@ const run = async (id: string, path: string) => {
 }
 
 for (let i = 0; i < scriptArray.length; i++) {
-  run(scriptArray[i].id, process.cwd() + "/test_files/" + scriptArray[i].file)
+  run(scriptArray[i].id, dirPath + scriptArray[i].file)
 }
+
+if (isLoggedIn) supabase.auth.signOut()
