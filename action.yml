@@ -35,6 +35,6 @@ runs:
     - uses: lots0logs/gh-action-get-changed-files@2.1.4
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-    - uses: node16
-      with:
+    - runs:
+        using: node16
         main: dist/index.js
