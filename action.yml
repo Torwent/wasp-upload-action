@@ -20,14 +20,24 @@ inputs:
     description: User password
     required: true
     type: string
+  ONLY_MODIFIED:
+    default: true
+    description: Wether to upload everything or only the modified simba scripts
+    required: false
+    type: boolean
   PATH:
     default: /
     description: Directory path where the files are located
     required: false
     type: string
   SCRIPTS:
-    description: Script ID and File to upload. The syntax is "SCRIPT_ID1=SCRIPT_FILE1\nSCRIPT_ID2=SCRIPT_FILE2"
+    description: Script ID and simba file links. The syntax is "SCRIPT_ID1=SCRIPT_FILE1\nSCRIPT_ID2=SCRIPT_FILE2"
     required: true
+    type: string
+  MODIFIED_FILES:
+    default: ""
+    description: JSON Input of the modified files
+    required: false
     type: string
 runs:
   using: node16

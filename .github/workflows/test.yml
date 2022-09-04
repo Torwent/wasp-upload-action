@@ -9,16 +9,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: lots0logs/gh-action-get-changed-files@2.1.4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v29.0.3
+
+      - name: List all changed files
+        run: |
+          for file in ${{ steps.changed-files.outputs.all_changed_files }}; do
+            echo "$file was changed"
+          done
       - name: Show system
         shell: bash
         run: |
           ls -a
           pwd
           ls test_files -a
-          ls ${HOME}
       - name: wasp-upload-action test
         uses: ./
         with:
@@ -30,3 +35,4 @@ jobs:
           SCRIPTS: |
             6d828069-d5d6-48d0-9e3b-ba7d8de14106=test1.simba
             7b173a61-b3a0-4010-ac77-16e36645387d=test2.simba
+          MODIFIED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}

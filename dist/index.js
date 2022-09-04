@@ -20,6 +20,9 @@ const EMAIL = (0, core_1.getInput)("EMAIL");
 const PASSWORD = (0, core_1.getInput)("PASSWORD");
 const PATH = (0, core_1.getInput)("PATH");
 const SCRIPTS = (0, core_1.getInput)("SCRIPTS").replaceAll(/ /g, "").split("\n");
+const MODIFIED_FILES = (0, core_1.getInput)("MODIFIED_FILES");
+console.log(MODIFIED_FILES);
+console.log(MODIFIED_FILES);
 let dirPath = process.cwd() + "/";
 if (PATH !== "")
     dirPath += PATH + "/";

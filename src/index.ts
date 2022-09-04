@@ -8,6 +8,10 @@ const EMAIL = getInput("EMAIL")
 const PASSWORD = getInput("PASSWORD")
 const PATH = getInput("PATH")
 const SCRIPTS = getInput("SCRIPTS").replaceAll(/ /g, "").split("\n")
+const MODIFIED_FILES = getInput("MODIFIED_FILES")
+
+console.log(MODIFIED_FILES)
+console.log(MODIFIED_FILES)
 
 let dirPath = process.cwd() + "/"
 if (PATH !== "") dirPath += PATH + "/"
