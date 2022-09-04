@@ -49,7 +49,10 @@ if (ONLY_MODIFIED) {
     });
     scriptArray = finalScriptArray;
 }
-const supabase = (0, supabase_js_1.createClient)(SB_URL, SB_ANON_KEY);
+const supabase = (0, supabase_js_1.createClient)(SB_URL, SB_ANON_KEY, {
+    autoRefreshToken: true,
+    persistSession: true,
+});
 let isLoggedIn = false;
 const pad = (n, size) => {
     let s = n + "";
@@ -100,6 +103,8 @@ const uploadFile = async (path, file) => {
 };
 exports.uploadFile = uploadFile;
 const run = async (id, path) => {
+    if (!isLoggedIn)
+        await loginSupabase();
     const rev = await getRevision(id);
     console.log("Uploading id: ", id, ", revision: ", rev, " file: ", path);
     await updateFileRevision(path, rev);
@@ -112,13 +117,11 @@ const run = async (id, path) => {
     if (error)
         console.error(error);
 };
-if (!isLoggedIn)
-    loginSupabase().then(() => {
-        for (let i = 0; i < scriptArray.length; i++) {
-            run(scriptArray[i].id, dirPath + scriptArray[i].file);
-        }
-        supabase.auth.signOut();
-    });
+for (let i = 0; i < scriptArray.length; i++) {
+    run(scriptArray[i].id, dirPath + scriptArray[i].file);
+}
+if (isLoggedIn)
+    supabase.auth.signOut();
 
 
 /***/ }),

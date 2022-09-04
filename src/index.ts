@@ -47,7 +47,11 @@ if (ONLY_MODIFIED) {
   scriptArray = finalScriptArray
 }
 
-const supabase = createClient(SB_URL, SB_ANON_KEY)
+const supabase = createClient(SB_URL, SB_ANON_KEY, {
+  autoRefreshToken: true,
+  persistSession: true,
+})
+
 let isLoggedIn: boolean = false
 
 const pad = (n: number, size: number) => {
@@ -107,6 +111,8 @@ export const uploadFile = async (path: string, file: string) => {
 }
 
 const run = async (id: string, path: string) => {
+  if (!isLoggedIn) await loginSupabase()
+
   const rev = await getRevision(id)
   console.log("Uploading id: ", id, ", revision: ", rev, " file: ", path)
   await updateFileRevision(path, rev)
@@ -122,11 +128,8 @@ const run = async (id: string, path: string) => {
   if (error) console.error(error)
 }
 
-if (!isLoggedIn)
-  loginSupabase().then(() => {
-    for (let i = 0; i < scriptArray.length; i++) {
-      run(scriptArray[i].id, dirPath + scriptArray[i].file)
-    }
+for (let i = 0; i < scriptArray.length; i++) {
+  run(scriptArray[i].id, dirPath + scriptArray[i].file)
+}
 
-    supabase.auth.signOut()
-  })
+if (isLoggedIn) supabase.auth.signOut()

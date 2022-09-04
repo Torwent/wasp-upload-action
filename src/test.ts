@@ -1,4 +1,3 @@
-import { getInput } from "@actions/core"
 import { createClient } from "@supabase/supabase-js"
 import fs from "fs"
 
@@ -6,10 +5,11 @@ const SB_URL = "SB_URL"
 const SB_ANON_KEY = "SB_ANON_KEY"
 const EMAIL = "EMAIL"
 const PASSWORD = "PASSWORD"
+const ONLY_MODIFIED = false
 const PATH = ""
-const SCRIPTS_INPUT = `SCRIPT_ID1=test1.simba
-SCRIPT_ID2=test2.simba`
-const SCRIPTS = SCRIPTS_INPUT.split("\n")
+const SCRIPTS = `SCRIPT_ID1=test1.simba
+SCRIPT_ID2=test2.simba`.split("\n")
+const MODIFIED_FILES = `test_files/test1.simba`.split(/ /g)
 
 let dirPath = process.cwd() + "/"
 if (PATH !== "") dirPath += PATH + "/"
@@ -29,7 +29,29 @@ for (let i = 0; i < SCRIPTS.length; i++) {
   scriptArray.push(script)
 }
 
-const supabase = createClient(SB_URL, SB_ANON_KEY)
+if (ONLY_MODIFIED) {
+  let finalScriptArray: Script[] = []
+  MODIFIED_FILES.forEach((file) => {
+    if (!file.endsWith(".simba")) return
+
+    let splittedStr = file.split("/")
+    file = splittedStr[splittedStr.length - 1]
+
+    for (let i = 0; i < scriptArray.length; i++) {
+      if (scriptArray[i].file === file) {
+        finalScriptArray.push(scriptArray[i])
+      }
+    }
+  })
+
+  scriptArray = finalScriptArray
+}
+
+const supabase = createClient(SB_URL, SB_ANON_KEY, {
+  autoRefreshToken: true,
+  persistSession: true,
+})
+
 let isLoggedIn: boolean = false
 
 const pad = (n: number, size: number) => {
