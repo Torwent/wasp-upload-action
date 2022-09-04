@@ -26,7 +26,7 @@ inputs:
     required: false
     type: boolean
   PATH:
-    default: /
+    default: ""
     description: Directory path where the files are located
     required: false
     type: string
