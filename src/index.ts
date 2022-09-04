@@ -30,7 +30,9 @@ for (let i = 0; i < SCRIPTS.length; i++) {
 }
 
 if (ONLY_MODIFIED === "true") {
+  console.log("ONLY_MODIFIED is on so we will filter the scripts!")
   let finalScriptArray: Script[] = []
+
   MODIFIED_FILES.forEach((file) => {
     if (!file.endsWith(".simba")) return
 
