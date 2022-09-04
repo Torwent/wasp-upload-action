@@ -35,14 +35,19 @@ for (let i = 0; i < SCRIPTS.length; i++) {
     scriptArray.push(script);
 }
 if (ONLY_MODIFIED) {
+    let finalScriptArray = [];
     MODIFIED_FILES.forEach((file) => {
-        console.log(file);
         if (!file.endsWith(".simba"))
             return;
         let splittedStr = file.split("/");
         file = splittedStr[splittedStr.length - 1];
-        console.log("here: ", file);
+        for (let i = 0; i < scriptArray.length; i++) {
+            if (scriptArray[i].file === file) {
+                finalScriptArray.push(scriptArray[i]);
+            }
+        }
     });
+    scriptArray = finalScriptArray;
 }
 const supabase = (0, supabase_js_1.createClient)(SB_URL, SB_ANON_KEY);
 let isLoggedIn = false;

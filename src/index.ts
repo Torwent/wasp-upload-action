@@ -30,15 +30,21 @@ for (let i = 0; i < SCRIPTS.length; i++) {
 }
 
 if (ONLY_MODIFIED) {
+  let finalScriptArray: Script[] = []
   MODIFIED_FILES.forEach((file) => {
-    console.log(file)
     if (!file.endsWith(".simba")) return
 
     let splittedStr = file.split("/")
     file = splittedStr[splittedStr.length - 1]
 
-    console.log("here: ", file)
+    for (let i = 0; i < scriptArray.length; i++) {
+      if (scriptArray[i].file === file) {
+        finalScriptArray.push(scriptArray[i])
+      }
+    }
   })
+
+  scriptArray = finalScriptArray
 }
 
 const supabase = createClient(SB_URL, SB_ANON_KEY)
