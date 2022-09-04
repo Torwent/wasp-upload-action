@@ -18,11 +18,10 @@ const SB_URL = (0, core_1.getInput)("SB_URL");
 const SB_ANON_KEY = (0, core_1.getInput)("SB_ANON_KEY");
 const EMAIL = (0, core_1.getInput)("EMAIL");
 const PASSWORD = (0, core_1.getInput)("PASSWORD");
+const ONLY_MODIFIED = (0, core_1.getInput)("ONLY_MODIFIED");
 const PATH = (0, core_1.getInput)("PATH");
 const SCRIPTS = (0, core_1.getInput)("SCRIPTS").replaceAll(/ /g, "").split("\n");
-const MODIFIED_FILES = (0, core_1.getInput)("MODIFIED_FILES");
-console.log(MODIFIED_FILES);
-console.log(MODIFIED_FILES);
+const MODIFIED_FILES = (0, core_1.getInput)("MODIFIED_FILES").split(/ /g);
 let dirPath = process.cwd() + "/";
 if (PATH !== "")
     dirPath += PATH + "/";
@@ -34,6 +33,16 @@ for (let i = 0; i < SCRIPTS.length; i++) {
         file: splitStr[1],
     };
     scriptArray.push(script);
+}
+if (ONLY_MODIFIED) {
+    MODIFIED_FILES.forEach((file) => {
+        console.log(file);
+        if (!file.endsWith(".simba"))
+            return;
+        let splittedStr = file.split("/");
+        file = splittedStr[splittedStr.length - 1];
+        console.log("here: ", file);
+    });
 }
 const supabase = (0, supabase_js_1.createClient)(SB_URL, SB_ANON_KEY);
 let isLoggedIn = false;
@@ -86,8 +95,6 @@ const uploadFile = async (path, file) => {
 };
 exports.uploadFile = uploadFile;
 const run = async (id, path) => {
-    if (!isLoggedIn)
-        await loginSupabase();
     const rev = await getRevision(id);
     console.log("Uploading id: ", id, ", revision: ", rev, " file: ", path);
     await updateFileRevision(path, rev);
@@ -100,11 +107,13 @@ const run = async (id, path) => {
     if (error)
         console.error(error);
 };
-for (let i = 0; i < scriptArray.length; i++) {
-    run(scriptArray[i].id, dirPath + scriptArray[i].file);
-}
-if (isLoggedIn)
-    supabase.auth.signOut();
+if (!isLoggedIn)
+    loginSupabase().then(() => {
+        for (let i = 0; i < scriptArray.length; i++) {
+            run(scriptArray[i].id, dirPath + scriptArray[i].file);
+        }
+        supabase.auth.signOut();
+    });
 
 
 /***/ }),
