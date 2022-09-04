@@ -29,7 +29,7 @@ for (let i = 0; i < SCRIPTS.length; i++) {
   scriptArray.push(script)
 }
 
-if (ONLY_MODIFIED) {
+if (ONLY_MODIFIED === true) {
   let finalScriptArray: Script[] = []
   MODIFIED_FILES.forEach((file) => {
     if (!file.endsWith(".simba")) return
