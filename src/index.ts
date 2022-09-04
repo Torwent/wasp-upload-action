@@ -6,7 +6,7 @@ const SB_URL = getInput("SB_URL")
 const SB_ANON_KEY = getInput("SB_ANON_KEY")
 const EMAIL = getInput("EMAIL")
 const PASSWORD = getInput("PASSWORD")
-const ONLY_MODIFIED = getInput("ONLY_MODIFIED") as unknown as boolean
+const ONLY_MODIFIED = getInput("ONLY_MODIFIED")
 const PATH = getInput("PATH")
 const SCRIPTS = getInput("SCRIPTS").replaceAll(/ /g, "").split("\n")
 const MODIFIED_FILES = getInput("MODIFIED_FILES").split(/ /g)
@@ -29,7 +29,7 @@ for (let i = 0; i < SCRIPTS.length; i++) {
   scriptArray.push(script)
 }
 
-if (ONLY_MODIFIED === true) {
+if (ONLY_MODIFIED === "true") {
   let finalScriptArray: Script[] = []
   MODIFIED_FILES.forEach((file) => {
     if (!file.endsWith(".simba")) return

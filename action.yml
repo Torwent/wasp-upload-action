@@ -21,10 +21,10 @@ inputs:
     required: true
     type: string
   ONLY_MODIFIED:
-    default: true
+    default: "true"
     description: Wether to upload everything or only the modified simba scripts
     required: false
-    type: boolean
+    type: string
   PATH:
     default: ""
     description: Directory path where the files are located
