@@ -73,7 +73,7 @@ const loginSupabase = async () => {
 };
 const getRevision = async (id) => {
     const { data, error } = await supabase
-        .from("scripts")
+        .from("scripts_protected")
         .select("revision")
         .eq("id", id);
     if (error) {
@@ -111,12 +111,6 @@ const run = async (id, path) => {
     await updateFileRevision(path, rev);
     const file = fs_1.default.readFileSync(path, "utf8");
     await (0, exports.uploadFile)(id + "/" + pad(rev, 9) + "/script.simba", file);
-    const { error } = await supabase
-        .from("scripts")
-        .update({ revision: rev })
-        .match({ id: id });
-    if (error)
-        console.error(error);
 };
 for (let i = 0; i < scriptArray.length; i++) {
     run(scriptArray[i].id, dirPath + scriptArray[i].file);
