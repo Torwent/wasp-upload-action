@@ -1,36 +1,55 @@
 import { createClient } from "@supabase/supabase-js"
-import fs from "fs"
+import fs, { readFileSync } from "fs"
 
 const SB_URL = "SB_URL"
 const SB_ANON_KEY = "SB_ANON_KEY"
 const EMAIL = "EMAIL"
 const PASSWORD = "PASSWORD"
-const ONLY_MODIFIED = false
-const PATH = ""
-const SCRIPTS = `SCRIPT_ID1=test1.simba
-SCRIPT_ID2=test2.simba`.split("\n")
+let ONLY_MODIFIED = "true"
+let PATH = "test_files"
 const MODIFIED_FILES = `test_files/test1.simba`.split(/ /g)
 
-let dirPath = process.cwd() + "/"
-if (PATH !== "") dirPath += PATH + "/"
+const REGEX_SCRIPT_ID =
+  /{\$UNDEF SCRIPT_ID}{\$DEFINE SCRIPT_ID := '[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}'}/
+
+let workingDir = process.cwd() + "/"
+if (PATH !== "") workingDir += PATH + "/"
 
 interface Script {
   id: string
+  name: string
+  path: string
   file: string
 }
 
 let scriptArray: Script[] = []
-for (let i = 0; i < SCRIPTS.length; i++) {
-  let splitStr = SCRIPTS[i].split("=")
-  let script: Script = {
-    id: splitStr[0],
-    file: splitStr[1],
-  }
-  scriptArray.push(script)
-}
+const files = fs.readdirSync(workingDir)
 
-if (ONLY_MODIFIED) {
-  let finalScriptArray: Script[] = []
+files.forEach((file) => {
+  let name = file.replace(".simba", "").replace("_", " ")
+  let content = readFileSync(workingDir + file, "utf8")
+  let matches = content.match(REGEX_SCRIPT_ID)
+
+  if (matches == null) return
+  let id = matches[0]
+    .replace("{$UNDEF SCRIPT_ID}{$DEFINE SCRIPT_ID := '", "")
+    .replace("}", "")
+
+  let script: Script = {
+    id: id,
+    name: name,
+    path: workingDir + file,
+    file: file,
+  }
+
+  console.log("Found script: ", script.name)
+  scriptArray.push(script)
+})
+
+if (ONLY_MODIFIED === "true") {
+  console.log("ONLY_MODIFIED is on so we will filter the scripts!")
+  let tmp: Script[] = []
+
   MODIFIED_FILES.forEach((file) => {
     if (!file.endsWith(".simba")) return
 
@@ -39,12 +58,13 @@ if (ONLY_MODIFIED) {
 
     for (let i = 0; i < scriptArray.length; i++) {
       if (scriptArray[i].file === file) {
-        finalScriptArray.push(scriptArray[i])
+        console.log("Modified file found: ", scriptArray[i].name)
+        tmp.push(scriptArray[i])
       }
     }
   })
 
-  scriptArray = finalScriptArray
+  scriptArray = tmp
 }
 
 const supabase = createClient(SB_URL, SB_ANON_KEY, {
@@ -105,7 +125,9 @@ const updateFileRevision = async (path: string, revision: number) => {
 }
 
 export const uploadFile = async (path: string, file: string) => {
-  const { error } = await supabase.storage.from("scripts").upload(path, file)
+  const { error } = await supabase.storage
+    .from("scripts-test")
+    .upload(path, file)
 
   if (error) return console.error(error)
 }
@@ -129,7 +151,7 @@ const run = async (id: string, path: string) => {
 }
 
 for (let i = 0; i < scriptArray.length; i++) {
-  run(scriptArray[i].id, dirPath + scriptArray[i].file)
+  run(scriptArray[i].id, workingDir + scriptArray[i].file)
 }
 
 if (isLoggedIn) supabase.auth.signOut()

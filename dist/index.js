@@ -6,37 +6,72 @@ require('./sourcemap-register.js');/******/ (() => { // webpackBootstrap
 
 "use strict";
 
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.uploadFile = void 0;
 const core_1 = __nccwpck_require__(5681);
 const supabase_js_1 = __nccwpck_require__(2440);
-const fs_1 = __importDefault(__nccwpck_require__(7147));
+const fs_1 = __importStar(__nccwpck_require__(7147));
 const SB_URL = (0, core_1.getInput)("SB_URL");
 const SB_ANON_KEY = (0, core_1.getInput)("SB_ANON_KEY");
 const EMAIL = (0, core_1.getInput)("EMAIL");
 const PASSWORD = (0, core_1.getInput)("PASSWORD");
 const ONLY_MODIFIED = (0, core_1.getInput)("ONLY_MODIFIED");
 const PATH = (0, core_1.getInput)("PATH");
-const SCRIPTS = (0, core_1.getInput)("SCRIPTS").replaceAll(/ /g, "").split("\n");
 const MODIFIED_FILES = (0, core_1.getInput)("MODIFIED_FILES").split(/ /g);
-let dirPath = process.cwd() + "/";
+const REGEX_SCRIPT_ID = /{\$UNDEF SCRIPT_ID}{\$DEFINE SCRIPT_ID := '[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}'}/;
+const REGEX_SETTINGS = /.*begin\n.*Login.PlayerIndex.*:=.*((.+\n)+).*StatsPayload.SetUsername\('.*'.*((.+\n)+).*end;\n/;
+const SETTINGS_REPLACE = "begin\n  Login.PlayerIndex     := 0;\n  StatsPayload.Username := '';\nend;";
+let workingDir = process.cwd() + "/";
 if (PATH !== "")
-    dirPath += PATH + "/";
+    workingDir += PATH + "/";
 let scriptArray = [];
-for (let i = 0; i < SCRIPTS.length; i++) {
-    let splitStr = SCRIPTS[i].split("=");
+const files = fs_1.default.readdirSync(workingDir);
+files.forEach((file) => {
+    const name = file.replace(".simba", "").replace("_", " ");
+    let content = (0, fs_1.readFileSync)(workingDir + file, "utf8");
+    const IDMatches = content.match(REGEX_SCRIPT_ID);
+    content = content.replace(REGEX_SETTINGS, SETTINGS_REPLACE);
+    fs_1.default.writeFileSync(file, content, "utf8");
+    if (IDMatches == null)
+        return;
+    const id = IDMatches[0]
+        .replace("{$UNDEF SCRIPT_ID}{$DEFINE SCRIPT_ID := '", "")
+        .replace("}", "");
     let script = {
-        id: splitStr[0],
-        file: splitStr[1],
+        id: id,
+        name: name,
+        path: workingDir + file,
+        file: file,
     };
+    console.log("Found script: ", script.name);
     scriptArray.push(script);
-}
+});
 if (ONLY_MODIFIED === "true") {
     console.log("ONLY_MODIFIED is on so we will filter the scripts!");
-    let finalScriptArray = [];
+    let tmp = [];
     MODIFIED_FILES.forEach((file) => {
         if (!file.endsWith(".simba"))
             return;
@@ -44,11 +79,12 @@ if (ONLY_MODIFIED === "true") {
         file = splittedStr[splittedStr.length - 1];
         for (let i = 0; i < scriptArray.length; i++) {
             if (scriptArray[i].file === file) {
-                finalScriptArray.push(scriptArray[i]);
+                console.log("Modified file found: ", scriptArray[i].name);
+                tmp.push(scriptArray[i]);
             }
         }
     });
-    scriptArray = finalScriptArray;
+    scriptArray = tmp;
 }
 const supabase = (0, supabase_js_1.createClient)(SB_URL, SB_ANON_KEY, {
     autoRefreshToken: true,
@@ -83,19 +119,19 @@ const getRevision = async (id) => {
     return data[0].revision + 1;
 };
 const updateFileRevision = async (path, revision) => {
-    const contents = fs_1.default.readFileSync(path, "utf8");
-    let fileString = contents.toString();
+    let content = fs_1.default.readFileSync(path, "utf8");
+    content = content.toString();
     let regex = /{\$UNDEF SCRIPT_REVISION}{\$DEFINE SCRIPT_REVISION := '(\d*?)'}/;
     let replaceStr = "{$UNDEF SCRIPT_REVISION}{$DEFINE SCRIPT_REVISION := '" +
         revision.toString() +
         "'}";
-    if (fileString.match(regex)) {
-        fileString = fileString.replace(regex, replaceStr);
+    if (content.match(regex)) {
+        content = content.replace(regex, replaceStr);
     }
     else {
-        fileString = replaceStr.concat("\n").concat(fileString);
+        content = replaceStr.concat("\n").concat(content);
     }
-    fs_1.default.writeFileSync(path, fileString, "utf8");
+    fs_1.default.writeFileSync(path, content, "utf8");
 };
 const uploadFile = async (path, file) => {
     const { error } = await supabase.storage.from("scripts").upload(path, file);
@@ -113,7 +149,7 @@ const run = async (id, path) => {
     await (0, exports.uploadFile)(id + "/" + pad(rev, 9) + "/script.simba", file);
 };
 for (let i = 0; i < scriptArray.length; i++) {
-    run(scriptArray[i].id, dirPath + scriptArray[i].file);
+    run(scriptArray[i].id, workingDir + scriptArray[i].file);
 }
 if (isLoggedIn)
     supabase.auth.signOut();

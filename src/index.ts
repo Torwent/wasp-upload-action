@@ -1,6 +1,6 @@
 import { getInput } from "@actions/core"
 import { createClient } from "@supabase/supabase-js"
-import fs from "fs"
+import fs, { readFileSync } from "fs"
 
 const SB_URL = getInput("SB_URL")
 const SB_ANON_KEY = getInput("SB_ANON_KEY")
@@ -8,30 +8,57 @@ const EMAIL = getInput("EMAIL")
 const PASSWORD = getInput("PASSWORD")
 const ONLY_MODIFIED = getInput("ONLY_MODIFIED")
 const PATH = getInput("PATH")
-const SCRIPTS = getInput("SCRIPTS").replaceAll(/ /g, "").split("\n")
 const MODIFIED_FILES = getInput("MODIFIED_FILES").split(/ /g)
+const REGEX_SCRIPT_ID =
+  /{\$UNDEF SCRIPT_ID}{\$DEFINE SCRIPT_ID := '[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}'}/
 
-let dirPath = process.cwd() + "/"
-if (PATH !== "") dirPath += PATH + "/"
+const REGEX_SETTINGS =
+  /.*begin\n.*Login.PlayerIndex.*:=.*((.+\n)+).*StatsPayload.SetUsername\('.*'.*((.+\n)+).*end;\n/
+const SETTINGS_REPLACE =
+  "begin\n  Login.PlayerIndex     := 0;\n  StatsPayload.Username := '';\nend;"
+
+let workingDir = process.cwd() + "/"
+if (PATH !== "") workingDir += PATH + "/"
 
 interface Script {
   id: string
+  name: string
+  path: string
   file: string
 }
 
 let scriptArray: Script[] = []
-for (let i = 0; i < SCRIPTS.length; i++) {
-  let splitStr = SCRIPTS[i].split("=")
+
+const files = fs.readdirSync(workingDir)
+
+files.forEach((file) => {
+  const name = file.replace(".simba", "").replace("_", " ")
+  let content = readFileSync(workingDir + file, "utf8")
+  const IDMatches = content.match(REGEX_SCRIPT_ID)
+
+  content = content.replace(REGEX_SETTINGS, SETTINGS_REPLACE)
+
+  fs.writeFileSync(file, content, "utf8")
+
+  if (IDMatches == null) return
+  const id = IDMatches[0]
+    .replace("{$UNDEF SCRIPT_ID}{$DEFINE SCRIPT_ID := '", "")
+    .replace("}", "")
+
   let script: Script = {
-    id: splitStr[0],
-    file: splitStr[1],
+    id: id,
+    name: name,
+    path: workingDir + file,
+    file: file,
   }
+
+  console.log("Found script: ", script.name)
   scriptArray.push(script)
-}
+})
 
 if (ONLY_MODIFIED === "true") {
   console.log("ONLY_MODIFIED is on so we will filter the scripts!")
-  let finalScriptArray: Script[] = []
+  let tmp: Script[] = []
 
   MODIFIED_FILES.forEach((file) => {
     if (!file.endsWith(".simba")) return
@@ -41,12 +68,13 @@ if (ONLY_MODIFIED === "true") {
 
     for (let i = 0; i < scriptArray.length; i++) {
       if (scriptArray[i].file === file) {
-        finalScriptArray.push(scriptArray[i])
+        console.log("Modified file found: ", scriptArray[i].name)
+        tmp.push(scriptArray[i])
       }
     }
   })
 
-  scriptArray = finalScriptArray
+  scriptArray = tmp
 }
 
 const supabase = createClient(SB_URL, SB_ANON_KEY, {
@@ -83,13 +111,13 @@ const getRevision = async (id: string) => {
     console.error(error)
     return 0
   }
-  return (data[0].revision as unknown as number) + 1
+  return (data[0].revision as number) + 1
 }
 
 const updateFileRevision = async (path: string, revision: number) => {
-  const contents = fs.readFileSync(path, "utf8")
+  let content = fs.readFileSync(path, "utf8")
 
-  let fileString = contents.toString()
+  content = content.toString()
   let regex = /{\$UNDEF SCRIPT_REVISION}{\$DEFINE SCRIPT_REVISION := '(\d*?)'}/
 
   let replaceStr =
@@ -97,13 +125,13 @@ const updateFileRevision = async (path: string, revision: number) => {
     revision.toString() +
     "'}"
 
-  if (fileString.match(regex)) {
-    fileString = fileString.replace(regex, replaceStr)
+  if (content.match(regex)) {
+    content = content.replace(regex, replaceStr)
   } else {
-    fileString = replaceStr.concat("\n").concat(fileString)
+    content = replaceStr.concat("\n").concat(content)
   }
 
-  fs.writeFileSync(path, fileString, "utf8")
+  fs.writeFileSync(path, content, "utf8")
 }
 
 export const uploadFile = async (path: string, file: string) => {
@@ -125,7 +153,7 @@ const run = async (id: string, path: string) => {
 }
 
 for (let i = 0; i < scriptArray.length; i++) {
-  run(scriptArray[i].id, dirPath + scriptArray[i].file)
+  run(scriptArray[i].id, workingDir + scriptArray[i].file)
 }
 
 if (isLoggedIn) supabase.auth.signOut()
