@@ -4,7 +4,7 @@ import fs, { readFileSync } from "fs"
 const SB_URL = "SB_URL"
 const SB_ANON_KEY = "SB_ANON_KEY"
 const EMAIL = "EMAIL"
-const PASSWORD = "PASSWORD"
+const PASSWORD = "PASSWpnpORD"
 let ONLY_MODIFIED = "true"
 let PATH = "test_files"
 const MODIFIED_FILES = `test_files/test1.simba`.split(/ /g)
@@ -33,7 +33,7 @@ files.forEach((file) => {
   if (matches == null) return
   let id = matches[0]
     .replace("{$UNDEF SCRIPT_ID}{$DEFINE SCRIPT_ID := '", "")
-    .replace("}", "")
+    .replace("'}", "")
 
   let script: Script = {
     id: id,
@@ -42,7 +42,7 @@ files.forEach((file) => {
     file: file,
   }
 
-  console.log("Found script: ", script.name)
+  console.log("Found script: ", script.id)
   scriptArray.push(script)
 })
 

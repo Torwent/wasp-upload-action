@@ -66,7 +66,7 @@ files.forEach((file) => {
         return;
     const ID = MATCHES[0]
         .replace("{$UNDEF SCRIPT_ID}{$DEFINE SCRIPT_ID := '", "")
-        .replace("}", "");
+        .replace("'}", "");
     let script = {
         id: ID,
         name: NAME,
@@ -112,7 +112,7 @@ const loginSupabase = async () => {
     if (error)
         return console.error(error);
     isLoggedIn = true;
-    console.log("Logged in to https://waspscripts.com");
+    console.log("LOGGED IN TO: https://waspscripts.com");
 };
 const getRevision = async (id) => {
     console.log("GETTING ", id, " REVISION");
@@ -155,7 +155,7 @@ const run = async (id, path) => {
     if (!isLoggedIn)
         await loginSupabase();
     if (!isLoggedIn) {
-        console.error("Failed to log in.");
+        console.error("FAILED TO LOG IN.");
         return;
     }
     const rev = await getRevision(id);
