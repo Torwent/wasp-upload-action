@@ -51,11 +51,15 @@ console.log("PROCESS CURRENT WORKING DIRECTORY: ", process.cwd());
 console.log("WORKING DIRECTORY: ", workingDir);
 let scriptArray = [];
 const files = fs_1.default.readdirSync(workingDir);
-console.log("FOUND SIMBA FILES: ", files);
+console.log("FOUND FILES: ", files);
 files.forEach((file) => {
+    const CURRENT_PATH = workingDir + file;
+    if (fs_1.default.lstatSync(CURRENT_PATH).isDirectory())
+        return;
+    if (!file.endsWith(".simba"))
+        return;
     const NAME = file.replace(".simba", "").replace("_", " ");
-    console.log("READING FILE:", workingDir + file);
-    let content = (0, fs_1.readFileSync)(workingDir + file, "utf8");
+    let content = (0, fs_1.readFileSync)(CURRENT_PATH, "utf8");
     const MATCHES = content.match(REGEX_SCRIPT_ID);
     content = content.replace(REGEX_SETTINGS, SETTINGS_REPLACE);
     fs_1.default.writeFileSync(file, content, "utf8");
@@ -67,7 +71,7 @@ files.forEach((file) => {
     let script = {
         id: ID,
         name: NAME,
-        path: workingDir + file,
+        path: CURRENT_PATH,
         file: file,
     };
     console.log("Found script: ", script.name);

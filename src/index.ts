@@ -34,12 +34,15 @@ let scriptArray: Script[] = []
 
 const files = fs.readdirSync(workingDir)
 
-console.log("FOUND SIMBA FILES: ", files)
+console.log("FOUND FILES: ", files)
 
 files.forEach((file) => {
+  const CURRENT_PATH = workingDir + file
+  if (fs.lstatSync(CURRENT_PATH).isDirectory()) return
+  if (!file.endsWith(".simba")) return
+
   const NAME = file.replace(".simba", "").replace("_", " ")
-  console.log("READING FILE:", workingDir + file)
-  let content = readFileSync(workingDir + file, "utf8")
+  let content = readFileSync(CURRENT_PATH, "utf8")
   const MATCHES = content.match(REGEX_SCRIPT_ID)
 
   content = content.replace(REGEX_SETTINGS, SETTINGS_REPLACE)
@@ -53,7 +56,7 @@ files.forEach((file) => {
   let script: Script = {
     id: ID,
     name: NAME,
-    path: workingDir + file,
+    path: CURRENT_PATH,
     file: file,
   }
 
