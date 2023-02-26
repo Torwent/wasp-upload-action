@@ -51,20 +51,22 @@ console.log("PROCESS CURRENT WORKING DIRECTORY: ", process.cwd());
 console.log("WORKING DIRECTORY: ", workingDir);
 let scriptArray = [];
 const files = fs_1.default.readdirSync(workingDir);
+console.log("FOUND SIMBA FILES: ", files);
 files.forEach((file) => {
-    const name = file.replace(".simba", "").replace("_", " ");
+    const NAME = file.replace(".simba", "").replace("_", " ");
+    console.log("READING FILE:", workingDir + file);
     let content = (0, fs_1.readFileSync)(workingDir + file, "utf8");
-    const IDMatches = content.match(REGEX_SCRIPT_ID);
+    const MATCHES = content.match(REGEX_SCRIPT_ID);
     content = content.replace(REGEX_SETTINGS, SETTINGS_REPLACE);
     fs_1.default.writeFileSync(file, content, "utf8");
-    if (IDMatches == null)
+    if (MATCHES == null)
         return;
-    const id = IDMatches[0]
+    const ID = MATCHES[0]
         .replace("{$UNDEF SCRIPT_ID}{$DEFINE SCRIPT_ID := '", "")
         .replace("}", "");
     let script = {
-        id: id,
-        name: name,
+        id: ID,
+        name: NAME,
         path: workingDir + file,
         file: file,
     };

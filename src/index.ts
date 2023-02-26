@@ -34,23 +34,25 @@ let scriptArray: Script[] = []
 
 const files = fs.readdirSync(workingDir)
 
+console.log("FOUND SIMBA FILES: ", files)
+
 files.forEach((file) => {
-  const name = file.replace(".simba", "").replace("_", " ")
+  const NAME = file.replace(".simba", "").replace("_", " ")
+  console.log("READING FILE:", workingDir + file)
   let content = readFileSync(workingDir + file, "utf8")
-  const IDMatches = content.match(REGEX_SCRIPT_ID)
+  const MATCHES = content.match(REGEX_SCRIPT_ID)
 
   content = content.replace(REGEX_SETTINGS, SETTINGS_REPLACE)
-
   fs.writeFileSync(file, content, "utf8")
 
-  if (IDMatches == null) return
-  const id = IDMatches[0]
+  if (MATCHES == null) return
+  const ID = MATCHES[0]
     .replace("{$UNDEF SCRIPT_ID}{$DEFINE SCRIPT_ID := '", "")
     .replace("}", "")
 
   let script: Script = {
-    id: id,
-    name: name,
+    id: ID,
+    name: NAME,
     path: workingDir + file,
     file: file,
   }
