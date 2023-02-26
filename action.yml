@@ -1,7 +1,7 @@
 name: wasp-upload-action
 description: Upload Simba scripts to waspscripts.com
 author: Torwent
-branding: upload
+branding: upload-cloud
 
 inputs:
   SB_URL:
@@ -29,10 +29,6 @@ inputs:
     default: ""
     description: Directory path where the files are located
     required: false
-    type: string
-  SCRIPTS:
-    description: Script ID and simba file links. The syntax is "SCRIPT_ID1=SCRIPT_FILE1\nSCRIPT_ID2=SCRIPT_FILE2"
-    required: true
     type: string
   MODIFIED_FILES:
     default: ""
