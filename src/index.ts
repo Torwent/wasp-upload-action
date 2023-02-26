@@ -34,8 +34,6 @@ let scriptArray: Script[] = []
 
 const files = fs.readdirSync(workingDir)
 
-console.log("FOUND FILES: ", files)
-
 files.forEach((file) => {
   const CURRENT_PATH = workingDir + file
   if (fs.lstatSync(CURRENT_PATH).isDirectory()) return
@@ -106,10 +104,11 @@ const loginSupabase = async () => {
 
   if (error) return console.error(error)
   isLoggedIn = true
-  console.log("Logged in to waspscripts.com as: ", EMAIL)
+  console.log("Logged in to https://waspscripts.com")
 }
 
 const getRevision = async (id: string) => {
+  console.log("GETTING ", id, " REVISION")
   const { data, error } = await supabase
     .from("scripts_protected")
     .select("revision")
@@ -119,10 +118,14 @@ const getRevision = async (id: string) => {
     console.error(error)
     return 0
   }
-  return (data[0].revision as number) + 1
+
+  console.log("CURRENT REVISION: ", data[0])
+  let revision = data[0].revision as number
+  return revision + 1
 }
 
 const updateFileRevision = async (path: string, revision: number) => {
+  console.log("UPDATING ", path, " REVISION TO: ", revision)
   let content = fs.readFileSync(path, "utf8")
 
   content = content.toString()
@@ -143,6 +146,7 @@ const updateFileRevision = async (path: string, revision: number) => {
 }
 
 export const uploadFile = async (path: string, file: string) => {
+  console.log("UPLOADING FILE TO: ", path)
   const { error } = await supabase.storage.from("scripts").upload(path, file)
 
   if (error) return console.error(error)
@@ -150,9 +154,12 @@ export const uploadFile = async (path: string, file: string) => {
 
 const run = async (id: string, path: string) => {
   if (!isLoggedIn) await loginSupabase()
+  if (!isLoggedIn) {
+    console.error("Failed to log in.")
+    return
+  }
 
   const rev = await getRevision(id)
-  console.log("Uploading id: ", id, ", revision: ", rev, " file: ", path)
   await updateFileRevision(path, rev)
 
   const file = fs.readFileSync(path, "utf8")

@@ -51,7 +51,6 @@ console.log("PROCESS CURRENT WORKING DIRECTORY: ", process.cwd());
 console.log("WORKING DIRECTORY: ", workingDir);
 let scriptArray = [];
 const files = fs_1.default.readdirSync(workingDir);
-console.log("FOUND FILES: ", files);
 files.forEach((file) => {
     const CURRENT_PATH = workingDir + file;
     if (fs_1.default.lstatSync(CURRENT_PATH).isDirectory())
@@ -113,9 +112,10 @@ const loginSupabase = async () => {
     if (error)
         return console.error(error);
     isLoggedIn = true;
-    console.log("Logged in to waspscripts.com as: ", EMAIL);
+    console.log("Logged in to https://waspscripts.com");
 };
 const getRevision = async (id) => {
+    console.log("GETTING ", id, " REVISION");
     const { data, error } = await supabase
         .from("scripts_protected")
         .select("revision")
@@ -124,9 +124,12 @@ const getRevision = async (id) => {
         console.error(error);
         return 0;
     }
-    return data[0].revision + 1;
+    console.log("CURRENT REVISION: ", data[0]);
+    let revision = data[0].revision;
+    return revision + 1;
 };
 const updateFileRevision = async (path, revision) => {
+    console.log("UPDATING ", path, " REVISION TO: ", revision);
     let content = fs_1.default.readFileSync(path, "utf8");
     content = content.toString();
     let regex = /{\$UNDEF SCRIPT_REVISION}{\$DEFINE SCRIPT_REVISION := '(\d*?)'}/;
@@ -142,6 +145,7 @@ const updateFileRevision = async (path, revision) => {
     fs_1.default.writeFileSync(path, content, "utf8");
 };
 const uploadFile = async (path, file) => {
+    console.log("UPLOADING FILE TO: ", path);
     const { error } = await supabase.storage.from("scripts").upload(path, file);
     if (error)
         return console.error(error);
@@ -150,8 +154,11 @@ exports.uploadFile = uploadFile;
 const run = async (id, path) => {
     if (!isLoggedIn)
         await loginSupabase();
+    if (!isLoggedIn) {
+        console.error("Failed to log in.");
+        return;
+    }
     const rev = await getRevision(id);
-    console.log("Uploading id: ", id, ", revision: ", rev, " file: ", path);
     await updateFileRevision(path, rev);
     const file = fs_1.default.readFileSync(path, "utf8");
     await (0, exports.uploadFile)(id + "/" + pad(rev, 9) + "/script.simba", file);
