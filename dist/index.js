@@ -47,6 +47,8 @@ const SETTINGS_REPLACE = "begin\n  Login.PlayerIndex     := 0;\n  StatsPayload.U
 let workingDir = process.cwd() + "/";
 if (PATH !== "")
     workingDir += PATH + "/";
+console.log("PROCESS CURRENT WORKING DIRECTORY: ", process.cwd());
+console.log("WORKING DIRECTORY: ", workingDir);
 let scriptArray = [];
 const files = fs_1.default.readdirSync(workingDir);
 files.forEach((file) => {

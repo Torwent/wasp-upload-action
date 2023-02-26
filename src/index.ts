@@ -20,6 +20,9 @@ const SETTINGS_REPLACE =
 let workingDir = process.cwd() + "/"
 if (PATH !== "") workingDir += PATH + "/"
 
+console.log("PROCESS CURRENT WORKING DIRECTORY: ", process.cwd())
+console.log("WORKING DIRECTORY: ", workingDir)
+
 interface Script {
   id: string
   name: string
