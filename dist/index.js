@@ -43,7 +43,7 @@ const PATH = (0, core_1.getInput)("PATH");
 const MODIFIED_FILES = (0, core_1.getInput)("MODIFIED_FILES").split(/ /g);
 const REGEX_SCRIPT_ID = /{\$UNDEF SCRIPT_ID}{\$DEFINE SCRIPT_ID := '[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}'}/;
 const REGEX_SETTINGS = /.*begin\n.*Login.PlayerIndex.*:=.*((.+\n)+).*StatsPayload.SetUsername\('.*'.*((.+\n)+).*end;\n/;
-const SETTINGS_REPLACE = "begin\n  Login.PlayerIndex     := 0;\n  StatsPayload.Username := '';\nend;\n";
+const SETTINGS_REPLACE = "begin\n  Login.PlayerIndex := 0;\n  StatsPayload.SetUsername('');\nend;\n";
 let workingDir = process.cwd() + "/";
 if (PATH !== "")
     workingDir += PATH + "/";
