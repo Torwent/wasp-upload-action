@@ -15,7 +15,7 @@ const REGEX_SCRIPT_ID =
 const REGEX_SETTINGS =
   /.*begin\n.*Login.PlayerIndex.*:=.*((.+\n)+).*StatsPayload.SetUsername\('.*'.*((.+\n)+).*end;\n/
 const SETTINGS_REPLACE =
-  "begin\n  Login.PlayerIndex     := 0;\n  StatsPayload.Username := '';\nend;\n"
+  "begin\n  Login.PlayerIndex := 0;\n  StatsPayload.SetUsername('');\nend;\n"
 
 let workingDir = process.cwd() + "/"
 if (PATH !== "") workingDir += PATH + "/"
