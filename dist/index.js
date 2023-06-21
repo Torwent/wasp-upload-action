@@ -41,9 +41,9 @@ const PASSWORD = (0, core_1.getInput)("PASSWORD");
 const ONLY_MODIFIED = (0, core_1.getInput)("ONLY_MODIFIED");
 const PATH = (0, core_1.getInput)("PATH");
 const MODIFIED_FILES = (0, core_1.getInput)("MODIFIED_FILES").split(/ /g);
-const REGEX_SCRIPT_ID = /{\$UNDEF SCRIPT_ID}{\$DEFINE SCRIPT_ID := '[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}'}/;
-const REGEX_SETTINGS = /.*begin\n.*Login.PlayerIndex.*:=.*((.+\n)+).*StatsPayload.SetUsername\('.*'.*((.+\n)+).*end;\n/;
-const SETTINGS_REPLACE = "begin\n  Login.PlayerIndex := 0;\n  StatsPayload.SetUsername('');\nend;\n";
+const REGEX_SCRIPT_ID = /{\$DEFINE SCRIPT_ID := '[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}'}/;
+const REGEX_SETTINGS = /.*begin\n.*Login.PlayerIndex.*:=.*((.+\n)+).*end;\n/;
+const SETTINGS_REPLACE = "begin\n  Login.PlayerIndex := 0;\nend;\n";
 let workingDir = process.cwd() + "/";
 if (PATH !== "")
     workingDir += PATH + "/";
@@ -64,9 +64,7 @@ files.forEach((file) => {
     fs_1.default.writeFileSync(file, content, "utf8");
     if (MATCHES == null)
         return;
-    const ID = MATCHES[0]
-        .replace("{$UNDEF SCRIPT_ID}{$DEFINE SCRIPT_ID := '", "")
-        .replace("'}", "");
+    const ID = MATCHES[0].replace("{$DEFINE SCRIPT_ID := '", "").replace("'}", "");
     let script = {
         id: ID,
         name: NAME,
@@ -132,10 +130,8 @@ const updateFileRevision = async (path, revision) => {
     console.log("UPDATING ", path, " REVISION TO: ", revision);
     let content = fs_1.default.readFileSync(path, "utf8");
     content = content.toString();
-    let regex = /{\$UNDEF SCRIPT_REVISION}{\$DEFINE SCRIPT_REVISION := '(\d*?)'}/;
-    let replaceStr = "{$UNDEF SCRIPT_REVISION}{$DEFINE SCRIPT_REVISION := '" +
-        revision.toString() +
-        "'}";
+    let regex = /{\$DEFINE SCRIPT_REVISION := '(\d*?)'}/;
+    let replaceStr = "{$DEFINE SCRIPT_REVISION := '" + revision.toString() + "'}";
     if (content.match(regex)) {
         content = content.replace(regex, replaceStr);
     }
@@ -7199,7 +7195,7 @@ module.exports = { mask, unmask };
 
 
 try {
-  module.exports = require(__nccwpck_require__.ab + "prebuilds/win32-x64/node.napi.node");
+  module.exports = require(__nccwpck_require__.ab + "prebuilds/win32-x64/node.napi1.node");
 } catch (e) {
   module.exports = __nccwpck_require__(9084);
 }
@@ -10411,7 +10407,7 @@ module.exports = isValidUTF8;
 
 
 try {
-  module.exports = require(__nccwpck_require__.ab + "prebuilds/win32-x64/node.napi1.node");
+  module.exports = require(__nccwpck_require__.ab + "prebuilds/win32-x64/node.napi.node");
 } catch (e) {
   module.exports = __nccwpck_require__(7705);
 }

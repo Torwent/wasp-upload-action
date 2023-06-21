@@ -10,7 +10,7 @@ let PATH = "test_files"
 const MODIFIED_FILES = `test_files/test1.simba`.split(/ /g)
 
 const REGEX_SCRIPT_ID =
-  /{\$UNDEF SCRIPT_ID}{\$DEFINE SCRIPT_ID := '[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}'}/
+  /{\$DEFINE SCRIPT_ID := '[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}'}/
 
 let workingDir = process.cwd() + "/"
 if (PATH !== "") workingDir += PATH + "/"
@@ -31,9 +31,7 @@ files.forEach((file) => {
   let matches = content.match(REGEX_SCRIPT_ID)
 
   if (matches == null) return
-  let id = matches[0]
-    .replace("{$UNDEF SCRIPT_ID}{$DEFINE SCRIPT_ID := '", "")
-    .replace("'}", "")
+  let id = matches[0].replace("{$DEFINE SCRIPT_ID := '", "").replace("'}", "")
 
   let script: Script = {
     id: id,
@@ -108,12 +106,9 @@ const updateFileRevision = async (path: string, revision: number) => {
   const contents = fs.readFileSync(path, "utf8")
 
   let fileString = contents.toString()
-  let regex = /{\$UNDEF SCRIPT_REVISION}{\$DEFINE SCRIPT_REVISION := '(\d*?)'}/
+  let regex = /{\$DEFINE SCRIPT_REVISION := '(\d*?)'}/
 
-  let replaceStr =
-    "{$UNDEF SCRIPT_REVISION}{$DEFINE SCRIPT_REVISION := '" +
-    revision.toString() +
-    "'}"
+  let replaceStr = "{$DEFINE SCRIPT_REVISION := '" + revision.toString() + "'}"
 
   if (fileString.match(regex)) {
     fileString = fileString.replace(regex, replaceStr)
