@@ -31,8 +31,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.uploadFile = void 0;
-const core_1 = __nccwpck_require__(5681);
-const supabase_js_1 = __nccwpck_require__(2440);
+const core_1 = __nccwpck_require__(7954);
+const supabase_js_1 = __nccwpck_require__(7465);
 const fs_1 = __importStar(__nccwpck_require__(7147));
 const SB_URL = (0, core_1.getInput)("SB_URL");
 const SB_ANON_KEY = (0, core_1.getInput)("SB_ANON_KEY");
@@ -55,6 +55,7 @@ files.forEach((file) => {
     const CURRENT_PATH = workingDir + file;
     if (fs_1.default.lstatSync(CURRENT_PATH).isDirectory())
         return;
+    console.log("Found file: ", CURRENT_PATH);
     if (!file.endsWith(".simba"))
         return;
     const NAME = file.replace(".simba", "").replace("_", " ");
@@ -65,22 +66,22 @@ files.forEach((file) => {
     if (MATCHES == null)
         return;
     const ID = MATCHES[0].replace("{$DEFINE SCRIPT_ID := '", "").replace("'}", "");
-    let script = {
+    const script = {
         id: ID,
         name: NAME,
         path: CURRENT_PATH,
-        file: file,
+        file: file
     };
     console.log("Found script: ", script.name);
     scriptArray.push(script);
 });
 if (ONLY_MODIFIED === "true") {
     console.log("ONLY_MODIFIED is on so we will filter the scripts!");
-    let tmp = [];
+    const tmp = [];
     MODIFIED_FILES.forEach((file) => {
         if (!file.endsWith(".simba"))
             return;
-        let splittedStr = file.split("/");
+        const splittedStr = file.split("/");
         file = splittedStr[splittedStr.length - 1];
         for (let i = 0; i < scriptArray.length; i++) {
             if (scriptArray[i].file === file) {
@@ -92,8 +93,7 @@ if (ONLY_MODIFIED === "true") {
     scriptArray = tmp;
 }
 const supabase = (0, supabase_js_1.createClient)(SB_URL, SB_ANON_KEY, {
-    autoRefreshToken: true,
-    persistSession: true,
+    auth: { autoRefreshToken: true, persistSession: false }
 });
 let isLoggedIn = false;
 const pad = (n, size) => {
@@ -103,9 +103,9 @@ const pad = (n, size) => {
     return s;
 };
 const loginSupabase = async () => {
-    const { error } = await supabase.auth.signIn({
+    const { error } = await supabase.auth.signInWithPassword({
         email: EMAIL,
-        password: PASSWORD,
+        password: PASSWORD
     });
     if (error)
         return console.error(error);
@@ -115,7 +115,8 @@ const loginSupabase = async () => {
 const getRevision = async (id) => {
     console.log("GETTING ", id, " REVISION");
     const { data, error } = await supabase
-        .from("scripts_protected")
+        .schema("scripts")
+        .from("protected")
         .select("revision")
         .eq("id", id);
     if (error) {
@@ -123,15 +124,15 @@ const getRevision = async (id) => {
         return 0;
     }
     console.log("CURRENT REVISION: ", data[0]);
-    let revision = data[0].revision;
+    const revision = data[0].revision;
     return revision + 1;
 };
 const updateFileRevision = async (path, revision) => {
     console.log("UPDATING ", path, " REVISION TO: ", revision);
     let content = fs_1.default.readFileSync(path, "utf8");
     content = content.toString();
-    let regex = /{\$DEFINE SCRIPT_REVISION := '(\d*?)'}/;
-    let replaceStr = "{$DEFINE SCRIPT_REVISION := '" + revision.toString() + "'}";
+    const regex = /{\$DEFINE SCRIPT_REVISION := '(\d*?)'}/;
+    const replaceStr = "{$DEFINE SCRIPT_REVISION := '" + revision.toString() + "'}";
     if (content.match(regex)) {
         content = content.replace(regex, replaceStr);
     }
@@ -168,7 +169,7 @@ if (isLoggedIn)
 
 /***/ }),
 
-/***/ 1346:
+/***/ 410:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -195,7 +196,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.issue = exports.issueCommand = void 0;
 const os = __importStar(__nccwpck_require__(2037));
-const utils_1 = __nccwpck_require__(9754);
+const utils_1 = __nccwpck_require__(8900);
 /**
  * Commands
  *
@@ -267,7 +268,7 @@ function escapeProperty(s) {
 
 /***/ }),
 
-/***/ 5681:
+/***/ 7954:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -302,13 +303,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.getIDToken = exports.getState = exports.saveState = exports.group = exports.endGroup = exports.startGroup = exports.info = exports.notice = exports.warning = exports.error = exports.debug = exports.isDebug = exports.setFailed = exports.setCommandEcho = exports.setOutput = exports.getBooleanInput = exports.getMultilineInput = exports.getInput = exports.addPath = exports.setSecret = exports.exportVariable = exports.ExitCode = void 0;
-const command_1 = __nccwpck_require__(1346);
-const file_command_1 = __nccwpck_require__(1753);
-const utils_1 = __nccwpck_require__(9754);
+const command_1 = __nccwpck_require__(410);
+const file_command_1 = __nccwpck_require__(980);
+const utils_1 = __nccwpck_require__(8900);
 const os = __importStar(__nccwpck_require__(2037));
 const path = __importStar(__nccwpck_require__(1017));
-const uuid_1 = __nccwpck_require__(7066);
-const oidc_utils_1 = __nccwpck_require__(4892);
+const oidc_utils_1 = __nccwpck_require__(8776);
 /**
  * The code to exit an action
  */
@@ -337,20 +337,9 @@ function exportVariable(name, val) {
     process.env[name] = convertedVal;
     const filePath = process.env['GITHUB_ENV'] || '';
     if (filePath) {
-        const delimiter = `ghadelimiter_${uuid_1.v4()}`;
-        // These should realistically never happen, but just in case someone finds a way to exploit uuid generation let's not allow keys or values that contain the delimiter.
-        if (name.includes(delimiter)) {
-            throw new Error(`Unexpected input: name should not contain the delimiter "${delimiter}"`);
-        }
-        if (convertedVal.includes(delimiter)) {
-            throw new Error(`Unexpected input: value should not contain the delimiter "${delimiter}"`);
-        }
-        const commandValue = `${name}<<${delimiter}${os.EOL}${convertedVal}${os.EOL}${delimiter}`;
-        file_command_1.issueCommand('ENV', commandValue);
+        return file_command_1.issueFileCommand('ENV', file_command_1.prepareKeyValueMessage(name, val));
     }
-    else {
-        command_1.issueCommand('set-env', { name }, convertedVal);
-    }
+    command_1.issueCommand('set-env', { name }, convertedVal);
 }
 exports.exportVariable = exportVariable;
 /**
@@ -368,7 +357,7 @@ exports.setSecret = setSecret;
 function addPath(inputPath) {
     const filePath = process.env['GITHUB_PATH'] || '';
     if (filePath) {
-        file_command_1.issueCommand('PATH', inputPath);
+        file_command_1.issueFileCommand('PATH', inputPath);
     }
     else {
         command_1.issueCommand('add-path', {}, inputPath);
@@ -408,7 +397,10 @@ function getMultilineInput(name, options) {
     const inputs = getInput(name, options)
         .split('\n')
         .filter(x => x !== '');
-    return inputs;
+    if (options && options.trimWhitespace === false) {
+        return inputs;
+    }
+    return inputs.map(input => input.trim());
 }
 exports.getMultilineInput = getMultilineInput;
 /**
@@ -441,8 +433,12 @@ exports.getBooleanInput = getBooleanInput;
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function setOutput(name, value) {
+    const filePath = process.env['GITHUB_OUTPUT'] || '';
+    if (filePath) {
+        return file_command_1.issueFileCommand('OUTPUT', file_command_1.prepareKeyValueMessage(name, value));
+    }
     process.stdout.write(os.EOL);
-    command_1.issueCommand('set-output', { name }, value);
+    command_1.issueCommand('set-output', { name }, utils_1.toCommandValue(value));
 }
 exports.setOutput = setOutput;
 /**
@@ -571,7 +567,11 @@ exports.group = group;
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function saveState(name, value) {
-    command_1.issueCommand('save-state', { name }, value);
+    const filePath = process.env['GITHUB_STATE'] || '';
+    if (filePath) {
+        return file_command_1.issueFileCommand('STATE', file_command_1.prepareKeyValueMessage(name, value));
+    }
+    command_1.issueCommand('save-state', { name }, utils_1.toCommandValue(value));
 }
 exports.saveState = saveState;
 /**
@@ -593,17 +593,17 @@ exports.getIDToken = getIDToken;
 /**
  * Summary exports
  */
-var summary_1 = __nccwpck_require__(5957);
+var summary_1 = __nccwpck_require__(8265);
 Object.defineProperty(exports, "summary", ({ enumerable: true, get: function () { return summary_1.summary; } }));
 /**
  * @deprecated use core.summary
  */
-var summary_2 = __nccwpck_require__(5957);
+var summary_2 = __nccwpck_require__(8265);
 Object.defineProperty(exports, "markdownSummary", ({ enumerable: true, get: function () { return summary_2.markdownSummary; } }));
 /**
  * Path exports
  */
-var path_utils_1 = __nccwpck_require__(891);
+var path_utils_1 = __nccwpck_require__(6370);
 Object.defineProperty(exports, "toPosixPath", ({ enumerable: true, get: function () { return path_utils_1.toPosixPath; } }));
 Object.defineProperty(exports, "toWin32Path", ({ enumerable: true, get: function () { return path_utils_1.toWin32Path; } }));
 Object.defineProperty(exports, "toPlatformPath", ({ enumerable: true, get: function () { return path_utils_1.toPlatformPath; } }));
@@ -611,7 +611,7 @@ Object.defineProperty(exports, "toPlatformPath", ({ enumerable: true, get: funct
 
 /***/ }),
 
-/***/ 1753:
+/***/ 980:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -637,13 +637,14 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.issueCommand = void 0;
+exports.prepareKeyValueMessage = exports.issueFileCommand = void 0;
 // We use any as a valid input type
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const fs = __importStar(__nccwpck_require__(7147));
 const os = __importStar(__nccwpck_require__(2037));
-const utils_1 = __nccwpck_require__(9754);
-function issueCommand(command, message) {
+const uuid_1 = __nccwpck_require__(7066);
+const utils_1 = __nccwpck_require__(8900);
+function issueFileCommand(command, message) {
     const filePath = process.env[`GITHUB_${command}`];
     if (!filePath) {
         throw new Error(`Unable to find environment variable for file command ${command}`);
@@ -655,12 +656,27 @@ function issueCommand(command, message) {
         encoding: 'utf8'
     });
 }
-exports.issueCommand = issueCommand;
+exports.issueFileCommand = issueFileCommand;
+function prepareKeyValueMessage(key, value) {
+    const delimiter = `ghadelimiter_${uuid_1.v4()}`;
+    const convertedValue = utils_1.toCommandValue(value);
+    // These should realistically never happen, but just in case someone finds a
+    // way to exploit uuid generation let's not allow keys or values that contain
+    // the delimiter.
+    if (key.includes(delimiter)) {
+        throw new Error(`Unexpected input: name should not contain the delimiter "${delimiter}"`);
+    }
+    if (convertedValue.includes(delimiter)) {
+        throw new Error(`Unexpected input: value should not contain the delimiter "${delimiter}"`);
+    }
+    return `${key}<<${delimiter}${os.EOL}${convertedValue}${os.EOL}${delimiter}`;
+}
+exports.prepareKeyValueMessage = prepareKeyValueMessage;
 //# sourceMappingURL=file-command.js.map
 
 /***/ }),
 
-/***/ 4892:
+/***/ 8776:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -676,9 +692,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.OidcClient = void 0;
-const http_client_1 = __nccwpck_require__(9706);
-const auth_1 = __nccwpck_require__(8336);
-const core_1 = __nccwpck_require__(5681);
+const http_client_1 = __nccwpck_require__(5316);
+const auth_1 = __nccwpck_require__(2220);
+const core_1 = __nccwpck_require__(7954);
 class OidcClient {
     static createHttpClient(allowRetry = true, maxRetry = 10) {
         const requestOptions = {
@@ -744,7 +760,7 @@ exports.OidcClient = OidcClient;
 
 /***/ }),
 
-/***/ 891:
+/***/ 6370:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -809,7 +825,7 @@ exports.toPlatformPath = toPlatformPath;
 
 /***/ }),
 
-/***/ 5957:
+/***/ 8265:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -1099,7 +1115,7 @@ exports.summary = _summary;
 
 /***/ }),
 
-/***/ 9754:
+/***/ 8900:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -1146,7 +1162,7 @@ exports.toCommandProperties = toCommandProperties;
 
 /***/ }),
 
-/***/ 8336:
+/***/ 2220:
 /***/ (function(__unused_webpack_module, exports) {
 
 "use strict";
@@ -1234,7 +1250,7 @@ exports.PersonalAccessTokenCredentialHandler = PersonalAccessTokenCredentialHand
 
 /***/ }),
 
-/***/ 9706:
+/***/ 5316:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -1272,7 +1288,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.HttpClient = exports.isHttps = exports.HttpClientResponse = exports.HttpClientError = exports.getProxyUrl = exports.MediaTypes = exports.Headers = exports.HttpCodes = void 0;
 const http = __importStar(__nccwpck_require__(3685));
 const https = __importStar(__nccwpck_require__(5687));
-const pm = __importStar(__nccwpck_require__(531));
+const pm = __importStar(__nccwpck_require__(1767));
 const tunnel = __importStar(__nccwpck_require__(8125));
 var HttpCodes;
 (function (HttpCodes) {
@@ -1359,6 +1375,19 @@ class HttpClientResponse {
                 });
                 this.message.on('end', () => {
                     resolve(output.toString());
+                });
+            }));
+        });
+    }
+    readBodyBuffer() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
+                const chunks = [];
+                this.message.on('data', (chunk) => {
+                    chunks.push(chunk);
+                });
+                this.message.on('end', () => {
+                    resolve(Buffer.concat(chunks));
                 });
             }));
         });
@@ -1846,7 +1875,7 @@ const lowercaseKeys = (obj) => Object.keys(obj).reduce((c, k) => ((c[k.toLowerCa
 
 /***/ }),
 
-/***/ 531:
+/***/ 1767:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -1867,7 +1896,13 @@ function getProxyUrl(reqUrl) {
         }
     })();
     if (proxyVar) {
-        return new URL(proxyVar);
+        try {
+            return new URL(proxyVar);
+        }
+        catch (_a) {
+            if (!proxyVar.startsWith('http://') && !proxyVar.startsWith('https://'))
+                return new URL(`http://${proxyVar}`);
+        }
     }
     else {
         return undefined;
@@ -1877,6 +1912,10 @@ exports.getProxyUrl = getProxyUrl;
 function checkBypass(reqUrl) {
     if (!reqUrl.hostname) {
         return false;
+    }
+    const reqHost = reqUrl.hostname;
+    if (isLoopbackAddress(reqHost)) {
+        return true;
     }
     const noProxy = process.env['no_proxy'] || process.env['NO_PROXY'] || '';
     if (!noProxy) {
@@ -1903,18 +1942,143 @@ function checkBypass(reqUrl) {
         .split(',')
         .map(x => x.trim().toUpperCase())
         .filter(x => x)) {
-        if (upperReqHosts.some(x => x === upperNoProxyItem)) {
+        if (upperNoProxyItem === '*' ||
+            upperReqHosts.some(x => x === upperNoProxyItem ||
+                x.endsWith(`.${upperNoProxyItem}`) ||
+                (upperNoProxyItem.startsWith('.') &&
+                    x.endsWith(`${upperNoProxyItem}`)))) {
             return true;
         }
     }
     return false;
 }
 exports.checkBypass = checkBypass;
+function isLoopbackAddress(host) {
+    const hostLower = host.toLowerCase();
+    return (hostLower === 'localhost' ||
+        hostLower.startsWith('127.') ||
+        hostLower.startsWith('[::1]') ||
+        hostLower.startsWith('[0:0:0:0:0:0:0:1]'));
+}
 //# sourceMappingURL=proxy.js.map
 
 /***/ }),
 
-/***/ 6966:
+/***/ 522:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.FunctionsClient = void 0;
+const helper_1 = __nccwpck_require__(3426);
+const types_1 = __nccwpck_require__(6821);
+class FunctionsClient {
+    constructor(url, { headers = {}, customFetch, } = {}) {
+        this.url = url;
+        this.headers = headers;
+        this.fetch = (0, helper_1.resolveFetch)(customFetch);
+    }
+    /**
+     * Updates the authorization header
+     * @param token - the new jwt token sent in the authorisation header
+     */
+    setAuth(token) {
+        this.headers.Authorization = `Bearer ${token}`;
+    }
+    /**
+     * Invokes a function
+     * @param functionName - The name of the Function to invoke.
+     * @param options - Options for invoking the Function.
+     */
+    invoke(functionName, options = {}) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const { headers, method, body: functionArgs } = options;
+                let _headers = {};
+                let body;
+                if (functionArgs &&
+                    ((headers && !Object.prototype.hasOwnProperty.call(headers, 'Content-Type')) || !headers)) {
+                    if ((typeof Blob !== 'undefined' && functionArgs instanceof Blob) ||
+                        functionArgs instanceof ArrayBuffer) {
+                        // will work for File as File inherits Blob
+                        // also works for ArrayBuffer as it is the same underlying structure as a Blob
+                        _headers['Content-Type'] = 'application/octet-stream';
+                        body = functionArgs;
+                    }
+                    else if (typeof functionArgs === 'string') {
+                        // plain string
+                        _headers['Content-Type'] = 'text/plain';
+                        body = functionArgs;
+                    }
+                    else if (typeof FormData !== 'undefined' && functionArgs instanceof FormData) {
+                        // don't set content-type headers
+                        // Request will automatically add the right boundary value
+                        body = functionArgs;
+                    }
+                    else {
+                        // default, assume this is JSON
+                        _headers['Content-Type'] = 'application/json';
+                        body = JSON.stringify(functionArgs);
+                    }
+                }
+                const response = yield this.fetch(`${this.url}/${functionName}`, {
+                    method: method || 'POST',
+                    // headers priority is (high to low):
+                    // 1. invoke-level headers
+                    // 2. client-level headers
+                    // 3. default Content-Type header
+                    headers: Object.assign(Object.assign(Object.assign({}, _headers), this.headers), headers),
+                    body,
+                }).catch((fetchError) => {
+                    throw new types_1.FunctionsFetchError(fetchError);
+                });
+                const isRelayError = response.headers.get('x-relay-error');
+                if (isRelayError && isRelayError === 'true') {
+                    throw new types_1.FunctionsRelayError(response);
+                }
+                if (!response.ok) {
+                    throw new types_1.FunctionsHttpError(response);
+                }
+                let responseType = ((_a = response.headers.get('Content-Type')) !== null && _a !== void 0 ? _a : 'text/plain').split(';')[0].trim();
+                let data;
+                if (responseType === 'application/json') {
+                    data = yield response.json();
+                }
+                else if (responseType === 'application/octet-stream') {
+                    data = yield response.blob();
+                }
+                else if (responseType === 'multipart/form-data') {
+                    data = yield response.formData();
+                }
+                else {
+                    // default to text
+                    data = yield response.text();
+                }
+                return { data, error: null };
+            }
+            catch (error) {
+                return { data: null, error };
+            }
+        });
+    }
+}
+exports.FunctionsClient = FunctionsClient;
+//# sourceMappingURL=FunctionsClient.js.map
+
+/***/ }),
+
+/***/ 3426:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -1959,7 +2123,7 @@ const resolveFetch = (customFetch) => {
         _fetch = customFetch;
     }
     else if (typeof fetch === 'undefined') {
-        _fetch = (...args) => __awaiter(void 0, void 0, void 0, function* () { return yield (yield Promise.resolve().then(() => __importStar(__nccwpck_require__(8624)))).fetch(...args); });
+        _fetch = (...args) => __awaiter(void 0, void 0, void 0, function* () { return yield (yield Promise.resolve().then(() => __importStar(__nccwpck_require__(1489)))).fetch(...args); });
     }
     else {
         _fetch = fetch;
@@ -1971,611 +2135,229 @@ exports.resolveFetch = resolveFetch;
 
 /***/ }),
 
-/***/ 2271:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ 7537:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.FunctionsClient = void 0;
-const helper_1 = __nccwpck_require__(6966);
-class FunctionsClient {
-    constructor(url, { headers = {}, customFetch, } = {}) {
-        this.url = url;
-        this.headers = headers;
-        this.fetch = (0, helper_1.resolveFetch)(customFetch);
-    }
-    /**
-     * Updates the authorization header
-     * @params token - the new jwt token sent in the authorisation header
-     */
-    setAuth(token) {
-        this.headers.Authorization = `Bearer ${token}`;
-    }
-    /**
-     * Invokes a function
-     * @param functionName - the name of the function to invoke
-     * @param invokeOptions - object with the following properties
-     * `headers`: object representing the headers to send with the request
-     * `body`: the body of the request
-     * `responseType`: how the response should be parsed. The default is `json`
-     */
-    invoke(functionName, invokeOptions) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const { headers, body } = invokeOptions !== null && invokeOptions !== void 0 ? invokeOptions : {};
-                const response = yield this.fetch(`${this.url}/${functionName}`, {
-                    method: 'POST',
-                    headers: Object.assign({}, this.headers, headers),
-                    body,
-                });
-                const isRelayError = response.headers.get('x-relay-error');
-                if (isRelayError && isRelayError === 'true') {
-                    return { data: null, error: new Error(yield response.text()) };
-                }
-                let data;
-                const { responseType } = invokeOptions !== null && invokeOptions !== void 0 ? invokeOptions : {};
-                if (!responseType || responseType === 'json') {
-                    data = yield response.json();
-                }
-                else if (responseType === 'arrayBuffer') {
-                    data = yield response.arrayBuffer();
-                }
-                else if (responseType === 'blob') {
-                    data = yield response.blob();
-                }
-                else {
-                    data = yield response.text();
-                }
-                return { data, error: null };
-            }
-            catch (error) {
-                return { data: null, error };
-            }
-        });
-    }
-}
-exports.FunctionsClient = FunctionsClient;
+exports.FunctionsRelayError = exports.FunctionsHttpError = exports.FunctionsFetchError = exports.FunctionsError = exports.FunctionsClient = void 0;
+var FunctionsClient_1 = __nccwpck_require__(522);
+Object.defineProperty(exports, "FunctionsClient", ({ enumerable: true, get: function () { return FunctionsClient_1.FunctionsClient; } }));
+var types_1 = __nccwpck_require__(6821);
+Object.defineProperty(exports, "FunctionsError", ({ enumerable: true, get: function () { return types_1.FunctionsError; } }));
+Object.defineProperty(exports, "FunctionsFetchError", ({ enumerable: true, get: function () { return types_1.FunctionsFetchError; } }));
+Object.defineProperty(exports, "FunctionsHttpError", ({ enumerable: true, get: function () { return types_1.FunctionsHttpError; } }));
+Object.defineProperty(exports, "FunctionsRelayError", ({ enumerable: true, get: function () { return types_1.FunctionsRelayError; } }));
 //# sourceMappingURL=index.js.map
 
 /***/ }),
 
-/***/ 8101:
+/***/ 6821:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.FunctionsHttpError = exports.FunctionsRelayError = exports.FunctionsFetchError = exports.FunctionsError = void 0;
+class FunctionsError extends Error {
+    constructor(message, name = 'FunctionsError', context) {
+        super(message);
+        this.name = name;
+        this.context = context;
+    }
+}
+exports.FunctionsError = FunctionsError;
+class FunctionsFetchError extends FunctionsError {
+    constructor(context) {
+        super('Failed to send a request to the Edge Function', 'FunctionsFetchError', context);
+    }
+}
+exports.FunctionsFetchError = FunctionsFetchError;
+class FunctionsRelayError extends FunctionsError {
+    constructor(context) {
+        super('Relay Error invoking the Edge Function', 'FunctionsRelayError', context);
+    }
+}
+exports.FunctionsRelayError = FunctionsRelayError;
+class FunctionsHttpError extends FunctionsError {
+    constructor(context) {
+        super('Edge Function returned a non-2xx status code', 'FunctionsHttpError', context);
+    }
+}
+exports.FunctionsHttpError = FunctionsHttpError;
+//# sourceMappingURL=types.js.map
+
+/***/ }),
+
+/***/ 6244:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const fetch_1 = __nccwpck_require__(9709);
-const constants_1 = __nccwpck_require__(1052);
-const cookies_1 = __nccwpck_require__(8612);
-const helpers_1 = __nccwpck_require__(97);
-class GoTrueApi {
-    constructor({ url = '', headers = {}, cookieOptions, fetch, }) {
+const fetch_1 = __nccwpck_require__(398);
+const helpers_1 = __nccwpck_require__(6483);
+const errors_1 = __nccwpck_require__(6166);
+class GoTrueAdminApi {
+    constructor({ url = '', headers = {}, fetch, }) {
         this.url = url;
         this.headers = headers;
-        this.cookieOptions = Object.assign(Object.assign({}, constants_1.COOKIE_OPTIONS), cookieOptions);
         this.fetch = (0, helpers_1.resolveFetch)(fetch);
-    }
-    /**
-     * Create a temporary object with all configured headers and
-     * adds the Authorization token to be used on request methods
-     * @param jwt A valid, logged-in JWT.
-     */
-    _createRequestHeaders(jwt) {
-        const headers = Object.assign({}, this.headers);
-        headers['Authorization'] = `Bearer ${jwt}`;
-        return headers;
-    }
-    cookieName() {
-        var _a;
-        return (_a = this.cookieOptions.name) !== null && _a !== void 0 ? _a : '';
-    }
-    /**
-     * Generates the relevant login URL for a third-party provider.
-     * @param provider One of the providers supported by GoTrue.
-     * @param redirectTo A URL or mobile address to send the user to after they are confirmed.
-     * @param scopes A space-separated list of scopes granted to the OAuth application.
-     */
-    getUrlForProvider(provider, options) {
-        const urlParams = [`provider=${encodeURIComponent(provider)}`];
-        if (options === null || options === void 0 ? void 0 : options.redirectTo) {
-            urlParams.push(`redirect_to=${encodeURIComponent(options.redirectTo)}`);
-        }
-        if (options === null || options === void 0 ? void 0 : options.scopes) {
-            urlParams.push(`scopes=${encodeURIComponent(options.scopes)}`);
-        }
-        if (options === null || options === void 0 ? void 0 : options.queryParams) {
-            const query = new URLSearchParams(options.queryParams);
-            urlParams.push(`${query}`);
-        }
-        return `${this.url}/authorize?${urlParams.join('&')}`;
-    }
-    /**
-     * Creates a new user using their email address.
-     * @param email The email address of the user.
-     * @param password The password of the user.
-     * @param redirectTo A URL or mobile address to send the user to after they are confirmed.
-     * @param data Optional user metadata.
-     * @param captchaToken Verification token received when the user completes the captcha on your site.
-     *
-     * @returns A logged-in session if the server has "autoconfirm" ON
-     * @returns A user if the server has "autoconfirm" OFF
-     */
-    signUpWithEmail(email, password, options = {}) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const headers = Object.assign({}, this.headers);
-                let queryString = '';
-                if (options.redirectTo) {
-                    queryString = '?redirect_to=' + encodeURIComponent(options.redirectTo);
-                }
-                const data = yield (0, fetch_1.post)(this.fetch, `${this.url}/signup${queryString}`, {
-                    email,
-                    password,
-                    data: options.data,
-                    gotrue_meta_security: { captcha_token: options.captchaToken },
-                }, { headers });
-                const session = Object.assign({}, data);
-                if (session.expires_in)
-                    session.expires_at = (0, helpers_1.expiresAt)(data.expires_in);
-                return { data: session, error: null };
-            }
-            catch (e) {
-                return { data: null, error: e };
-            }
-        });
-    }
-    /**
-     * Logs in an existing user using their email address.
-     * @param email The email address of the user.
-     * @param password The password of the user.
-     * @param redirectTo A URL or mobile address to send the user to after they are confirmed.
-     * @param captchaToken Verification token received when the user completes the captcha on your site.
-     */
-    signInWithEmail(email, password, options = {}) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const headers = Object.assign({}, this.headers);
-                let queryString = '?grant_type=password';
-                if (options.redirectTo) {
-                    queryString += '&redirect_to=' + encodeURIComponent(options.redirectTo);
-                }
-                const data = yield (0, fetch_1.post)(this.fetch, `${this.url}/token${queryString}`, { email, password, gotrue_meta_security: { captcha_token: options.captchaToken } }, { headers });
-                const session = Object.assign({}, data);
-                if (session.expires_in)
-                    session.expires_at = (0, helpers_1.expiresAt)(data.expires_in);
-                return { data: session, error: null };
-            }
-            catch (e) {
-                return { data: null, error: e };
-            }
-        });
-    }
-    /**
-     * Signs up a new user using their phone number and a password.
-     * @param phone The phone number of the user.
-     * @param password The password of the user.
-     * @param data Optional user metadata.
-     * @param captchaToken Verification token received when the user completes the captcha on your site.
-     */
-    signUpWithPhone(phone, password, options = {}) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const headers = Object.assign({}, this.headers);
-                const data = yield (0, fetch_1.post)(this.fetch, `${this.url}/signup`, {
-                    phone,
-                    password,
-                    data: options.data,
-                    gotrue_meta_security: { captcha_token: options.captchaToken },
-                }, { headers });
-                const session = Object.assign({}, data);
-                if (session.expires_in)
-                    session.expires_at = (0, helpers_1.expiresAt)(data.expires_in);
-                return { data: session, error: null };
-            }
-            catch (e) {
-                return { data: null, error: e };
-            }
-        });
-    }
-    /**
-     * Logs in an existing user using their phone number and password.
-     * @param phone The phone number of the user.
-     * @param password The password of the user.
-     * @param captchaToken Verification token received when the user completes the captcha on your site.
-     */
-    signInWithPhone(phone, password, options = {}) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const headers = Object.assign({}, this.headers);
-                const queryString = '?grant_type=password';
-                const data = yield (0, fetch_1.post)(this.fetch, `${this.url}/token${queryString}`, { phone, password, gotrue_meta_security: { captcha_token: options.captchaToken } }, { headers });
-                const session = Object.assign({}, data);
-                if (session.expires_in)
-                    session.expires_at = (0, helpers_1.expiresAt)(data.expires_in);
-                return { data: session, error: null };
-            }
-            catch (e) {
-                return { data: null, error: e };
-            }
-        });
-    }
-    /**
-     * Logs in an OpenID Connect user using their id_token.
-     * @param id_token The IDToken of the user.
-     * @param nonce The nonce of the user. The nonce is a random value generated by the developer (= yourself) before the initial grant is started. You should check the OpenID Connect specification for details. https://openid.net/developers/specs/
-     * @param provider The provider of the user.
-     * @param client_id The clientID of the user.
-     * @param issuer The issuer of the user.
-     */
-    signInWithOpenIDConnect({ id_token, nonce, client_id, issuer, provider, }) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const headers = Object.assign({}, this.headers);
-                const queryString = '?grant_type=id_token';
-                const data = yield (0, fetch_1.post)(this.fetch, `${this.url}/token${queryString}`, { id_token, nonce, client_id, issuer, provider }, { headers });
-                const session = Object.assign({}, data);
-                if (session.expires_in)
-                    session.expires_at = (0, helpers_1.expiresAt)(data.expires_in);
-                return { data: session, error: null };
-            }
-            catch (e) {
-                return { data: null, error: e };
-            }
-        });
-    }
-    /**
-     * Sends a magic login link to an email address.
-     * @param email The email address of the user.
-     * @param shouldCreateUser A boolean flag to indicate whether to automatically create a user on magiclink / otp sign-ins if the user doesn't exist. Defaults to true.
-     * @param redirectTo A URL or mobile address to send the user to after they are confirmed.
-     * @param captchaToken Verification token received when the user completes the captcha on your site.
-     */
-    sendMagicLinkEmail(email, options = {}) {
-        var _a;
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const headers = Object.assign({}, this.headers);
-                let queryString = '';
-                if (options.redirectTo) {
-                    queryString += '?redirect_to=' + encodeURIComponent(options.redirectTo);
-                }
-                const shouldCreateUser = (_a = options.shouldCreateUser) !== null && _a !== void 0 ? _a : true;
-                const data = yield (0, fetch_1.post)(this.fetch, `${this.url}/otp${queryString}`, {
-                    email,
-                    create_user: shouldCreateUser,
-                    gotrue_meta_security: { captcha_token: options.captchaToken },
-                }, { headers });
-                return { data, error: null };
-            }
-            catch (e) {
-                return { data: null, error: e };
-            }
-        });
-    }
-    /**
-     * Sends a mobile OTP via SMS. Will register the account if it doesn't already exist
-     * @param phone The user's phone number WITH international prefix
-     * @param shouldCreateUser A boolean flag to indicate whether to automatically create a user on magiclink / otp sign-ins if the user doesn't exist. Defaults to true.
-     * @param captchaToken Verification token received when the user completes the captcha on your site.
-     */
-    sendMobileOTP(phone, options = {}) {
-        var _a;
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const shouldCreateUser = (_a = options.shouldCreateUser) !== null && _a !== void 0 ? _a : true;
-                const headers = Object.assign({}, this.headers);
-                const data = yield (0, fetch_1.post)(this.fetch, `${this.url}/otp`, {
-                    phone,
-                    create_user: shouldCreateUser,
-                    gotrue_meta_security: { captcha_token: options.captchaToken },
-                }, { headers });
-                return { data, error: null };
-            }
-            catch (e) {
-                return { data: null, error: e };
-            }
-        });
+        this.mfa = {
+            listFactors: this._listFactors.bind(this),
+            deleteFactor: this._deleteFactor.bind(this),
+        };
     }
     /**
      * Removes a logged-in session.
      * @param jwt A valid, logged-in JWT.
+     * @param scope The logout sope.
      */
-    signOut(jwt) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                yield (0, fetch_1.post)(this.fetch, `${this.url}/logout`, {}, { headers: this._createRequestHeaders(jwt), noResolveJson: true });
-                return { error: null };
+    async signOut(jwt, scope = 'global') {
+        try {
+            await (0, fetch_1._request)(this.fetch, 'POST', `${this.url}/logout?scope=${scope}`, {
+                headers: this.headers,
+                jwt,
+                noResolveJson: true,
+            });
+            return { data: null, error: null };
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: null, error };
             }
-            catch (e) {
-                return { error: e };
-            }
-        });
-    }
-    /**
-     * @deprecated Use `verifyOTP` instead!
-     * @param phone The user's phone number WITH international prefix
-     * @param token token that user was sent to their mobile phone
-     * @param redirectTo A URL or mobile address to send the user to after they are confirmed.
-     */
-    verifyMobileOTP(phone, token, options = {}) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const headers = Object.assign({}, this.headers);
-                const data = yield (0, fetch_1.post)(this.fetch, `${this.url}/verify`, { phone, token, type: 'sms', redirect_to: options.redirectTo }, { headers });
-                const session = Object.assign({}, data);
-                if (session.expires_in)
-                    session.expires_at = (0, helpers_1.expiresAt)(data.expires_in);
-                return { data: session, error: null };
-            }
-            catch (e) {
-                return { data: null, error: e };
-            }
-        });
-    }
-    /**
-     * Send User supplied Email / Mobile OTP to be verified
-     * @param email The user's email address
-     * @param phone The user's phone number WITH international prefix
-     * @param token token that user was sent to their mobile phone
-     * @param type verification type that the otp is generated for
-     * @param redirectTo A URL or mobile address to send the user to after they are confirmed.
-     */
-    verifyOTP({ email, phone, token, type = 'sms' }, options = {}) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const headers = Object.assign({}, this.headers);
-                const data = yield (0, fetch_1.post)(this.fetch, `${this.url}/verify`, { email, phone, token, type, redirect_to: options.redirectTo }, { headers });
-                const session = Object.assign({}, data);
-                if (session.expires_in)
-                    session.expires_at = (0, helpers_1.expiresAt)(data.expires_in);
-                return { data: session, error: null };
-            }
-            catch (e) {
-                return { data: null, error: e };
-            }
-        });
+            throw error;
+        }
     }
     /**
      * Sends an invite link to an email address.
      * @param email The email address of the user.
-     * @param redirectTo A URL or mobile address to send the user to after they are confirmed.
-     * @param data Optional user metadata
+     * @param options Additional options to be included when inviting.
      */
-    inviteUserByEmail(email, options = {}) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const headers = Object.assign({}, this.headers);
-                let queryString = '';
-                if (options.redirectTo) {
-                    queryString += '?redirect_to=' + encodeURIComponent(options.redirectTo);
-                }
-                const data = yield (0, fetch_1.post)(this.fetch, `${this.url}/invite${queryString}`, { email, data: options.data }, { headers });
-                return { data, error: null };
+    async inviteUserByEmail(email, options = {}) {
+        try {
+            return await (0, fetch_1._request)(this.fetch, 'POST', `${this.url}/invite`, {
+                body: { email, data: options.data },
+                headers: this.headers,
+                redirectTo: options.redirectTo,
+                xform: fetch_1._userResponse,
+            });
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: { user: null }, error };
             }
-            catch (e) {
-                return { data: null, error: e };
-            }
-        });
+            throw error;
+        }
     }
     /**
-     * Sends a reset request to an email address.
-     * @param email The email address of the user.
-     * @param redirectTo A URL or mobile address to send the user to after they are confirmed.
-     * @param captchaToken Verification token received when the user completes the captcha on your site.
-     */
-    resetPasswordForEmail(email, options = {}) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const headers = Object.assign({}, this.headers);
-                let queryString = '';
-                if (options.redirectTo) {
-                    queryString += '?redirect_to=' + encodeURIComponent(options.redirectTo);
-                }
-                const data = yield (0, fetch_1.post)(this.fetch, `${this.url}/recover${queryString}`, { email, gotrue_meta_security: { captcha_token: options.captchaToken } }, { headers });
-                return { data, error: null };
-            }
-            catch (e) {
-                return { data: null, error: e };
-            }
-        });
-    }
-    /**
-     * Generates a new JWT.
-     * @param refreshToken A valid refresh token that was returned on login.
-     */
-    refreshAccessToken(refreshToken) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const data = yield (0, fetch_1.post)(this.fetch, `${this.url}/token?grant_type=refresh_token`, { refresh_token: refreshToken }, { headers: this.headers });
-                const session = Object.assign({}, data);
-                if (session.expires_in)
-                    session.expires_at = (0, helpers_1.expiresAt)(data.expires_in);
-                return { data: session, error: null };
-            }
-            catch (e) {
-                return { data: null, error: e };
-            }
-        });
-    }
-    /**
-     * Set/delete the auth cookie based on the AuthChangeEvent.
-     * Works for Next.js & Express (requires cookie-parser middleware).
-     * @param req The request object.
-     * @param res The response object.
-     */
-    setAuthCookie(req, res) {
-        if (req.method !== 'POST') {
-            res.setHeader('Allow', 'POST');
-            res.status(405).end('Method Not Allowed');
-        }
-        const { event, session } = req.body;
-        if (!event)
-            throw new Error('Auth event missing!');
-        if (event === 'SIGNED_IN') {
-            if (!session)
-                throw new Error('Auth session missing!');
-            (0, cookies_1.setCookies)(req, res, [
-                { key: 'access-token', value: session.access_token },
-                { key: 'refresh-token', value: session.refresh_token },
-            ].map((token) => {
-                var _a;
-                return ({
-                    name: `${this.cookieName()}-${token.key}`,
-                    value: token.value,
-                    domain: this.cookieOptions.domain,
-                    maxAge: (_a = this.cookieOptions.lifetime) !== null && _a !== void 0 ? _a : 0,
-                    path: this.cookieOptions.path,
-                    sameSite: this.cookieOptions.sameSite,
-                });
-            }));
-        }
-        if (event === 'SIGNED_OUT') {
-            (0, cookies_1.setCookies)(req, res, ['access-token', 'refresh-token'].map((key) => ({
-                name: `${this.cookieName()}-${key}`,
-                value: '',
-                maxAge: -1,
-            })));
-        }
-        res.status(200).json({});
-    }
-    /**
-     * Deletes the Auth Cookies and redirects to the
-     * @param req The request object.
-     * @param res The response object.
-     * @param options Optionally specify a `redirectTo` URL in the options.
-     */
-    deleteAuthCookie(req, res, { redirectTo = '/' }) {
-        (0, cookies_1.setCookies)(req, res, ['access-token', 'refresh-token'].map((key) => ({
-            name: `${this.cookieName()}-${key}`,
-            value: '',
-            maxAge: -1,
-        })));
-        return res.redirect(307, redirectTo);
-    }
-    /**
-     * Helper method to generate the Auth Cookie string for you in case you can't use `setAuthCookie`.
-     * @param req The request object.
-     * @param res The response object.
-     * @returns The Cookie string that needs to be set as the value for the `Set-Cookie` header.
-     */
-    getAuthCookieString(req, res) {
-        if (req.method !== 'POST') {
-            res.setHeader('Allow', 'POST');
-            res.status(405).end('Method Not Allowed');
-        }
-        const { event, session } = req.body;
-        if (!event)
-            throw new Error('Auth event missing!');
-        if (event === 'SIGNED_IN') {
-            if (!session)
-                throw new Error('Auth session missing!');
-            return (0, cookies_1.getCookieString)(req, res, [
-                { key: 'access-token', value: session.access_token },
-                { key: 'refresh-token', value: session.refresh_token },
-            ].map((token) => {
-                var _a;
-                return ({
-                    name: `${this.cookieName()}-${token.key}`,
-                    value: token.value,
-                    domain: this.cookieOptions.domain,
-                    maxAge: (_a = this.cookieOptions.lifetime) !== null && _a !== void 0 ? _a : 0,
-                    path: this.cookieOptions.path,
-                    sameSite: this.cookieOptions.sameSite,
-                });
-            }));
-        }
-        if (event === 'SIGNED_OUT') {
-            return (0, cookies_1.getCookieString)(req, res, ['access-token', 'refresh-token'].map((key) => ({
-                name: `${this.cookieName()}-${key}`,
-                value: '',
-                maxAge: -1,
-            })));
-        }
-        return res.getHeader('Set-Cookie');
-    }
-    /**
-     * Generates links to be sent via email or other.
-     * @param type The link type ("signup" or "magiclink" or "recovery" or "invite").
+     * Generates email links and OTPs to be sent via a custom email provider.
      * @param email The user's email.
-     * @param password User password. For signup only.
-     * @param data Optional user metadata. For signup only.
-     * @param redirectTo The link type ("signup" or "magiclink" or "recovery" or "invite").
+     * @param options.password User password. For signup only.
+     * @param options.data Optional user metadata. For signup only.
+     * @param options.redirectTo The redirect url which should be appended to the generated link
      */
-    generateLink(type, email, options = {}) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const data = yield (0, fetch_1.post)(this.fetch, `${this.url}/admin/generate_link`, {
-                    type,
-                    email,
-                    password: options.password,
-                    data: options.data,
-                    redirect_to: options.redirectTo,
-                }, { headers: this.headers });
-                return { data, error: null };
+    async generateLink(params) {
+        try {
+            const { options } = params, rest = __rest(params, ["options"]);
+            const body = Object.assign(Object.assign({}, rest), options);
+            if ('newEmail' in rest) {
+                // replace newEmail with new_email in request body
+                body.new_email = rest === null || rest === void 0 ? void 0 : rest.newEmail;
+                delete body['newEmail'];
             }
-            catch (e) {
-                return { data: null, error: e };
+            return await (0, fetch_1._request)(this.fetch, 'POST', `${this.url}/admin/generate_link`, {
+                body: body,
+                headers: this.headers,
+                xform: fetch_1._generateLinkResponse,
+                redirectTo: options === null || options === void 0 ? void 0 : options.redirectTo,
+            });
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return {
+                    data: {
+                        properties: null,
+                        user: null,
+                    },
+                    error,
+                };
             }
-        });
+            throw error;
+        }
     }
     // User Admin API
     /**
      * Creates a new user.
-     *
      * This function should only be called on a server. Never expose your `service_role` key in the browser.
-     *
-     * @param attributes The data you want to create the user with.
      */
-    createUser(attributes) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const data = yield (0, fetch_1.post)(this.fetch, `${this.url}/admin/users`, attributes, {
-                    headers: this.headers,
-                });
-                return { user: data, data, error: null };
+    async createUser(attributes) {
+        try {
+            return await (0, fetch_1._request)(this.fetch, 'POST', `${this.url}/admin/users`, {
+                body: attributes,
+                headers: this.headers,
+                xform: fetch_1._userResponse,
+            });
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: { user: null }, error };
             }
-            catch (e) {
-                return { user: null, data: null, error: e };
-            }
-        });
+            throw error;
+        }
     }
     /**
      * Get a list of users.
      *
      * This function should only be called on a server. Never expose your `service_role` key in the browser.
+     * @param params An object which supports `page` and `perPage` as numbers, to alter the paginated results.
      */
-    listUsers() {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const data = yield (0, fetch_1.get)(this.fetch, `${this.url}/admin/users`, {
-                    headers: this.headers,
+    async listUsers(params) {
+        var _a, _b, _c, _d, _e, _f, _g;
+        try {
+            const pagination = { nextPage: null, lastPage: 0, total: 0 };
+            const response = await (0, fetch_1._request)(this.fetch, 'GET', `${this.url}/admin/users`, {
+                headers: this.headers,
+                noResolveJson: true,
+                query: {
+                    page: (_b = (_a = params === null || params === void 0 ? void 0 : params.page) === null || _a === void 0 ? void 0 : _a.toString()) !== null && _b !== void 0 ? _b : '',
+                    per_page: (_d = (_c = params === null || params === void 0 ? void 0 : params.perPage) === null || _c === void 0 ? void 0 : _c.toString()) !== null && _d !== void 0 ? _d : '',
+                },
+                xform: fetch_1._noResolveJsonResponse,
+            });
+            if (response.error)
+                throw response.error;
+            const users = await response.json();
+            const total = (_e = response.headers.get('x-total-count')) !== null && _e !== void 0 ? _e : 0;
+            const links = (_g = (_f = response.headers.get('link')) === null || _f === void 0 ? void 0 : _f.split(',')) !== null && _g !== void 0 ? _g : [];
+            if (links.length > 0) {
+                links.forEach((link) => {
+                    const page = parseInt(link.split(';')[0].split('=')[1].substring(0, 1));
+                    const rel = JSON.parse(link.split(';')[1].split('=')[1]);
+                    pagination[`${rel}Page`] = page;
                 });
-                return { data: data.users, error: null };
+                pagination.total = parseInt(total);
             }
-            catch (e) {
-                return { data: null, error: e };
+            return { data: Object.assign(Object.assign({}, users), pagination), error: null };
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: { users: [] }, error };
             }
-        });
+            throw error;
+        }
     }
     /**
      * Get user by id.
@@ -2584,68 +2366,19 @@ class GoTrueApi {
      *
      * This function should only be called on a server. Never expose your `service_role` key in the browser.
      */
-    getUserById(uid) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const data = yield (0, fetch_1.get)(this.fetch, `${this.url}/admin/users/${uid}`, {
-                    headers: this.headers,
-                });
-                return { data, error: null };
+    async getUserById(uid) {
+        try {
+            return await (0, fetch_1._request)(this.fetch, 'GET', `${this.url}/admin/users/${uid}`, {
+                headers: this.headers,
+                xform: fetch_1._userResponse,
+            });
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: { user: null }, error };
             }
-            catch (e) {
-                return { data: null, error: e };
-            }
-        });
-    }
-    /**
-     * Get user by reading the cookie from the request.
-     * Works for Next.js & Express (requires cookie-parser middleware).
-     */
-    getUserByCookie(req, res) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                if (!req.cookies) {
-                    throw new Error('Not able to parse cookies! When using Express make sure the cookie-parser middleware is in use!');
-                }
-                const access_token = req.cookies[`${this.cookieName()}-access-token`];
-                const refresh_token = req.cookies[`${this.cookieName()}-refresh-token`];
-                if (!access_token) {
-                    throw new Error('No cookie found!');
-                }
-                const { user, error: getUserError } = yield this.getUser(access_token);
-                if (getUserError) {
-                    if (!refresh_token)
-                        throw new Error('No refresh_token cookie found!');
-                    if (!res)
-                        throw new Error('You need to pass the res object to automatically refresh the session!');
-                    const { data, error } = yield this.refreshAccessToken(refresh_token);
-                    if (error) {
-                        throw error;
-                    }
-                    else if (data) {
-                        (0, cookies_1.setCookies)(req, res, [
-                            { key: 'access-token', value: data.access_token },
-                            { key: 'refresh-token', value: data.refresh_token },
-                        ].map((token) => {
-                            var _a;
-                            return ({
-                                name: `${this.cookieName()}-${token.key}`,
-                                value: token.value,
-                                domain: this.cookieOptions.domain,
-                                maxAge: (_a = this.cookieOptions.lifetime) !== null && _a !== void 0 ? _a : 0,
-                                path: this.cookieOptions.path,
-                                sameSite: this.cookieOptions.sameSite,
-                            });
-                        }));
-                        return { token: data.access_token, user: data.user, data: data.user, error: null };
-                    }
-                }
-                return { token: access_token, user: user, data: user, error: null };
-            }
-            catch (e) {
-                return { token: null, user: null, data: null, error: e };
-            }
-        });
+            throw error;
+        }
     }
     /**
      * Updates the user data.
@@ -2654,788 +2387,1850 @@ class GoTrueApi {
      *
      * This function should only be called on a server. Never expose your `service_role` key in the browser.
      */
-    updateUserById(uid, attributes) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                this; //
-                const data = yield (0, fetch_1.put)(this.fetch, `${this.url}/admin/users/${uid}`, attributes, {
-                    headers: this.headers,
-                });
-                return { user: data, data, error: null };
+    async updateUserById(uid, attributes) {
+        try {
+            return await (0, fetch_1._request)(this.fetch, 'PUT', `${this.url}/admin/users/${uid}`, {
+                body: attributes,
+                headers: this.headers,
+                xform: fetch_1._userResponse,
+            });
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: { user: null }, error };
             }
-            catch (e) {
-                return { user: null, data: null, error: e };
-            }
-        });
+            throw error;
+        }
     }
     /**
      * Delete a user. Requires a `service_role` key.
      *
+     * @param id The user id you want to remove.
+     * @param shouldSoftDelete If true, then the user will be soft-deleted from the auth schema.
+     * Defaults to false for backward compatibility.
+     *
      * This function should only be called on a server. Never expose your `service_role` key in the browser.
-     *
-     * @param uid The user uid you want to remove.
      */
-    deleteUser(uid) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const data = yield (0, fetch_1.remove)(this.fetch, `${this.url}/admin/users/${uid}`, {}, {
-                    headers: this.headers,
-                });
-                return { user: data, data, error: null };
+    async deleteUser(id, shouldSoftDelete = false) {
+        try {
+            return await (0, fetch_1._request)(this.fetch, 'DELETE', `${this.url}/admin/users/${id}`, {
+                headers: this.headers,
+                body: {
+                    should_soft_delete: shouldSoftDelete,
+                },
+                xform: fetch_1._userResponse,
+            });
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: { user: null }, error };
             }
-            catch (e) {
-                return { user: null, data: null, error: e };
-            }
-        });
+            throw error;
+        }
     }
-    /**
-     * Gets the current user details.
-     *
-     * This method is called by the GoTrueClient `update` where
-     * the jwt is set to this.currentSession.access_token
-     * and therefore, acts like getting the currently authenticated user
-     *
-     * @param jwt A valid, logged-in JWT. Typically, the access_token for the currentSession
-     */
-    getUser(jwt) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const data = yield (0, fetch_1.get)(this.fetch, `${this.url}/user`, {
-                    headers: this._createRequestHeaders(jwt),
-                });
-                return { user: data, data, error: null };
+    async _listFactors(params) {
+        try {
+            const { data, error } = await (0, fetch_1._request)(this.fetch, 'GET', `${this.url}/admin/users/${params.userId}/factors`, {
+                headers: this.headers,
+                xform: (factors) => {
+                    return { data: { factors }, error: null };
+                },
+            });
+            return { data, error };
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: null, error };
             }
-            catch (e) {
-                return { user: null, data: null, error: e };
-            }
-        });
+            throw error;
+        }
     }
-    /**
-     * Updates the user data.
-     * @param jwt A valid, logged-in JWT.
-     * @param attributes The data you want to update.
-     */
-    updateUser(jwt, attributes) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const data = yield (0, fetch_1.put)(this.fetch, `${this.url}/user`, attributes, {
-                    headers: this._createRequestHeaders(jwt),
-                });
-                return { user: data, data, error: null };
+    async _deleteFactor(params) {
+        try {
+            const data = await (0, fetch_1._request)(this.fetch, 'DELETE', `${this.url}/admin/users/${params.userId}/factors/${params.id}`, {
+                headers: this.headers,
+            });
+            return { data, error: null };
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: null, error };
             }
-            catch (e) {
-                return { user: null, data: null, error: e };
-            }
-        });
+            throw error;
+        }
     }
 }
-exports["default"] = GoTrueApi;
-//# sourceMappingURL=GoTrueApi.js.map
+exports["default"] = GoTrueAdminApi;
+//# sourceMappingURL=GoTrueAdminApi.js.map
 
 /***/ }),
 
-/***/ 2745:
+/***/ 5180:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const GoTrueApi_1 = __importDefault(__nccwpck_require__(8101));
-const helpers_1 = __nccwpck_require__(97);
-const constants_1 = __nccwpck_require__(1052);
-const polyfills_1 = __nccwpck_require__(8818);
+const GoTrueAdminApi_1 = __importDefault(__nccwpck_require__(6244));
+const constants_1 = __nccwpck_require__(3587);
+const errors_1 = __nccwpck_require__(6166);
+const fetch_1 = __nccwpck_require__(398);
+const helpers_1 = __nccwpck_require__(6483);
+const local_storage_1 = __importDefault(__nccwpck_require__(800));
+const polyfills_1 = __nccwpck_require__(550);
+const version_1 = __nccwpck_require__(6965);
 (0, polyfills_1.polyfillGlobalThis)(); // Make "globalThis" available
 const DEFAULT_OPTIONS = {
     url: constants_1.GOTRUE_URL,
+    storageKey: constants_1.STORAGE_KEY,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    multiTab: true,
     headers: constants_1.DEFAULT_HEADERS,
+    flowType: 'implicit',
+    debug: false,
 };
+/** Current session will be checked for refresh at this interval. */
+const AUTO_REFRESH_TICK_DURATION = 30 * 1000;
+/**
+ * A token refresh will be attempted this many ticks before the current session expires. */
+const AUTO_REFRESH_TICK_THRESHOLD = 3;
+async function lockNoOp(name, acquireTimeout, fn) {
+    return await fn();
+}
 class GoTrueClient {
     /**
      * Create a new client for use in the browser.
-     * @param options.url The URL of the GoTrue server.
-     * @param options.headers Any additional headers to send to the GoTrue server.
-     * @param options.detectSessionInUrl Set to "true" if you want to automatically detects OAuth grants in the URL and signs in the user.
-     * @param options.autoRefreshToken Set to "true" if you want to automatically refresh the token before expiring.
-     * @param options.persistSession Set to "true" if you want to automatically save the user session into local storage.
-     * @param options.localStorage Provide your own local storage implementation to use instead of the browser's local storage.
-     * @param options.multiTab Set to "false" if you want to disable multi-tab/window events.
-     * @param options.cookieOptions
-     * @param options.fetch A custom fetch implementation.
      */
     constructor(options) {
+        var _a;
         this.stateChangeEmitters = new Map();
-        this.networkRetries = 0;
+        this.autoRefreshTicker = null;
+        this.visibilityChangedCallback = null;
+        this.refreshingDeferred = null;
+        /**
+         * Keeps track of the async client initialization.
+         * When null or not yet resolved the auth state is `unknown`
+         * Once resolved the the auth state is known and it's save to call any further client methods.
+         * Keep extra care to never reject or throw uncaught errors
+         */
+        this.initializePromise = null;
+        this.detectSessionInUrl = true;
+        this.lockAcquired = false;
+        this.pendingInLock = [];
+        /**
+         * Used to broadcast state change events to other tabs listening.
+         */
+        this.broadcastChannel = null;
+        this.instanceID = GoTrueClient.nextInstanceID;
+        GoTrueClient.nextInstanceID += 1;
+        if (this.instanceID > 0 && (0, helpers_1.isBrowser)()) {
+            console.warn('Multiple GoTrueClient instances detected in the same browser context. It is not an error, but this should be avoided as it may produce undefined behavior when used concurrently under the same storage key.');
+        }
         const settings = Object.assign(Object.assign({}, DEFAULT_OPTIONS), options);
-        this.currentUser = null;
-        this.currentSession = null;
+        this.logDebugMessages = settings.debug;
+        this.inMemorySession = null;
+        this.storageKey = settings.storageKey;
         this.autoRefreshToken = settings.autoRefreshToken;
         this.persistSession = settings.persistSession;
-        this.multiTab = settings.multiTab;
-        this.localStorage = settings.localStorage || globalThis.localStorage;
-        this.api = new GoTrueApi_1.default({
+        this.storage = settings.storage || local_storage_1.default;
+        this.admin = new GoTrueAdminApi_1.default({
             url: settings.url,
             headers: settings.headers,
-            cookieOptions: settings.cookieOptions,
             fetch: settings.fetch,
         });
-        this._recoverSession();
-        this._recoverAndRefresh();
-        this._listenForMultiTabEvents();
-        this._handleVisibilityChange();
-        if (settings.detectSessionInUrl && (0, helpers_1.isBrowser)() && !!(0, helpers_1.getParameterByName)('access_token')) {
-            // Handle the OAuth redirect
-            this.getSessionFromUrl({ storeSession: true }).then(({ error }) => {
-                if (error) {
-                    throw new Error('Error getting session from URL.');
-                }
+        this.url = settings.url;
+        this.headers = settings.headers;
+        this.fetch = (0, helpers_1.resolveFetch)(settings.fetch);
+        this.lock = settings.lock || lockNoOp;
+        this.detectSessionInUrl = settings.detectSessionInUrl;
+        this.flowType = settings.flowType;
+        this.mfa = {
+            verify: this._verify.bind(this),
+            enroll: this._enroll.bind(this),
+            unenroll: this._unenroll.bind(this),
+            challenge: this._challenge.bind(this),
+            listFactors: this._listFactors.bind(this),
+            challengeAndVerify: this._challengeAndVerify.bind(this),
+            getAuthenticatorAssuranceLevel: this._getAuthenticatorAssuranceLevel.bind(this),
+        };
+        if (this.persistSession && this.storage === local_storage_1.default && !(0, helpers_1.supportsLocalStorage)()) {
+            console.warn(`No storage option exists to persist the session, which may result in unexpected behavior when using auth.
+        If you want to set persistSession to true, please provide a storage option or you may set persistSession to false to disable this warning.`);
+        }
+        if ((0, helpers_1.isBrowser)() && globalThis.BroadcastChannel && this.persistSession && this.storageKey) {
+            try {
+                this.broadcastChannel = new globalThis.BroadcastChannel(this.storageKey);
+            }
+            catch (e) {
+                console.error('Failed to create a new BroadcastChannel, multi-tab state changes will not be available', e);
+            }
+            (_a = this.broadcastChannel) === null || _a === void 0 ? void 0 : _a.addEventListener('message', async (event) => {
+                this._debug('received broadcast notification from other tab or client', event);
+                await this._notifyAllSubscribers(event.data.event, event.data.session, false); // broadcast = false so we don't get an endless loop of messages
             });
+        }
+        this.initialize();
+    }
+    _debug(...args) {
+        if (this.logDebugMessages) {
+            console.log(`GoTrueClient@${this.instanceID} (${version_1.version}) ${new Date().toISOString()}`, ...args);
+        }
+        return this;
+    }
+    /**
+     * Initializes the client session either from the url or from storage.
+     * This method is automatically called when instantiating the client, but should also be called
+     * manually when checking for an error from an auth redirect (oauth, magiclink, password recovery, etc).
+     */
+    async initialize() {
+        if (this.initializePromise) {
+            return await this.initializePromise;
+        }
+        this.initializePromise = (async () => {
+            return await this._acquireLock(-1, async () => {
+                return await this._initialize();
+            });
+        })();
+        return await this.initializePromise;
+    }
+    /**
+     * IMPORTANT:
+     * 1. Never throw in this method, as it is called from the constructor
+     * 2. Never return a session from this method as it would be cached over
+     *    the whole lifetime of the client
+     */
+    async _initialize() {
+        try {
+            const isPKCEFlow = (0, helpers_1.isBrowser)() ? await this._isPKCEFlow() : false;
+            this._debug('#_initialize()', 'begin', 'is PKCE flow', isPKCEFlow);
+            if (isPKCEFlow || (this.detectSessionInUrl && this._isImplicitGrantFlow())) {
+                const { data, error } = await this._getSessionFromURL(isPKCEFlow);
+                if (error) {
+                    this._debug('#_initialize()', 'error detecting session from URL', error);
+                    // failed login attempt via url,
+                    // remove old session as in verifyOtp, signUp and signInWith*
+                    await this._removeSession();
+                    return { error };
+                }
+                const { session, redirectType } = data;
+                this._debug('#_initialize()', 'detected session in URL', session, 'redirect type', redirectType);
+                await this._saveSession(session);
+                setTimeout(async () => {
+                    if (redirectType === 'recovery') {
+                        await this._notifyAllSubscribers('PASSWORD_RECOVERY', session);
+                    }
+                    else {
+                        await this._notifyAllSubscribers('SIGNED_IN', session);
+                    }
+                }, 0);
+                return { error: null };
+            }
+            // no login attempt via callback url try to recover session from storage
+            await this._recoverAndRefresh();
+            return { error: null };
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { error };
+            }
+            return {
+                error: new errors_1.AuthUnknownError('Unexpected error during initialization', error),
+            };
+        }
+        finally {
+            await this._handleVisibilityChange();
+            this._debug('#_initialize()', 'end');
         }
     }
     /**
      * Creates a new user.
-     * @type UserCredentials
-     * @param email The user's email address.
-     * @param password The user's password.
-     * @param phone The user's phone number.
-     * @param redirectTo The redirect URL attached to the signup confirmation link. Does not redirect the user if it's a mobile signup.
-     * @param data Optional user metadata.
+     *
+     * Be aware that if a user account exists in the system you may get back an
+     * error message that attempts to hide this information from the user.
+     * This method has support for PKCE via email signups. The PKCE flow cannot be used when autoconfirm is enabled.
+     *
+     * @returns A logged-in session if the server has "autoconfirm" ON
+     * @returns A user if the server has "autoconfirm" OFF
      */
-    signUp({ email, password, phone }, options = {}) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                this._removeSession();
-                const { data, error } = phone && password
-                    ? yield this.api.signUpWithPhone(phone, password, {
-                        data: options.data,
-                        captchaToken: options.captchaToken,
-                    })
-                    : yield this.api.signUpWithEmail(email, password, {
-                        redirectTo: options.redirectTo,
-                        data: options.data,
-                        captchaToken: options.captchaToken,
-                    });
-                if (error) {
-                    throw error;
+    async signUp(credentials) {
+        var _a, _b, _c;
+        try {
+            await this._removeSession();
+            let res;
+            if ('email' in credentials) {
+                const { email, password, options } = credentials;
+                let codeChallenge = null;
+                let codeChallengeMethod = null;
+                if (this.flowType === 'pkce') {
+                    const codeVerifier = (0, helpers_1.generatePKCEVerifier)();
+                    await (0, helpers_1.setItemAsync)(this.storage, `${this.storageKey}-code-verifier`, codeVerifier);
+                    codeChallenge = await (0, helpers_1.generatePKCEChallenge)(codeVerifier);
+                    codeChallengeMethod = codeVerifier === codeChallenge ? 'plain' : 's256';
                 }
-                if (!data) {
-                    throw 'An error occurred on sign up.';
-                }
-                let session = null;
-                let user = null;
-                if (data.access_token) {
-                    session = data;
-                    user = session.user;
-                    this._saveSession(session);
-                    this._notifyAllSubscribers('SIGNED_IN');
-                }
-                if (data.id) {
-                    user = data;
-                }
-                return { user, session, error: null };
+                res = await (0, fetch_1._request)(this.fetch, 'POST', `${this.url}/signup`, {
+                    headers: this.headers,
+                    redirectTo: options === null || options === void 0 ? void 0 : options.emailRedirectTo,
+                    body: {
+                        email,
+                        password,
+                        data: (_a = options === null || options === void 0 ? void 0 : options.data) !== null && _a !== void 0 ? _a : {},
+                        gotrue_meta_security: { captcha_token: options === null || options === void 0 ? void 0 : options.captchaToken },
+                        code_challenge: codeChallenge,
+                        code_challenge_method: codeChallengeMethod,
+                    },
+                    xform: fetch_1._sessionResponse,
+                });
             }
-            catch (e) {
-                return { user: null, session: null, error: e };
+            else if ('phone' in credentials) {
+                const { phone, password, options } = credentials;
+                res = await (0, fetch_1._request)(this.fetch, 'POST', `${this.url}/signup`, {
+                    headers: this.headers,
+                    body: {
+                        phone,
+                        password,
+                        data: (_b = options === null || options === void 0 ? void 0 : options.data) !== null && _b !== void 0 ? _b : {},
+                        channel: (_c = options === null || options === void 0 ? void 0 : options.channel) !== null && _c !== void 0 ? _c : 'sms',
+                        gotrue_meta_security: { captcha_token: options === null || options === void 0 ? void 0 : options.captchaToken },
+                    },
+                    xform: fetch_1._sessionResponse,
+                });
             }
+            else {
+                throw new errors_1.AuthInvalidCredentialsError('You must provide either an email or phone number and a password');
+            }
+            const { data, error } = res;
+            if (error || !data) {
+                return { data: { user: null, session: null }, error: error };
+            }
+            const session = data.session;
+            const user = data.user;
+            if (data.session) {
+                await this._saveSession(data.session);
+                await this._notifyAllSubscribers('SIGNED_IN', session);
+            }
+            return { data: { user, session }, error: null };
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: { user: null, session: null }, error };
+            }
+            throw error;
+        }
+    }
+    /**
+     * Log in an existing user with an email and password or phone and password.
+     *
+     * Be aware that you may get back an error message that will not distinguish
+     * between the cases where the account does not exist or that the
+     * email/phone and password combination is wrong or that the account can only
+     * be accessed via social login.
+     */
+    async signInWithPassword(credentials) {
+        try {
+            await this._removeSession();
+            let res;
+            if ('email' in credentials) {
+                const { email, password, options } = credentials;
+                res = await (0, fetch_1._request)(this.fetch, 'POST', `${this.url}/token?grant_type=password`, {
+                    headers: this.headers,
+                    body: {
+                        email,
+                        password,
+                        gotrue_meta_security: { captcha_token: options === null || options === void 0 ? void 0 : options.captchaToken },
+                    },
+                    xform: fetch_1._sessionResponse,
+                });
+            }
+            else if ('phone' in credentials) {
+                const { phone, password, options } = credentials;
+                res = await (0, fetch_1._request)(this.fetch, 'POST', `${this.url}/token?grant_type=password`, {
+                    headers: this.headers,
+                    body: {
+                        phone,
+                        password,
+                        gotrue_meta_security: { captcha_token: options === null || options === void 0 ? void 0 : options.captchaToken },
+                    },
+                    xform: fetch_1._sessionResponse,
+                });
+            }
+            else {
+                throw new errors_1.AuthInvalidCredentialsError('You must provide either an email or phone number and a password');
+            }
+            const { data, error } = res;
+            if (error) {
+                return { data: { user: null, session: null }, error };
+            }
+            else if (!data || !data.session || !data.user) {
+                return { data: { user: null, session: null }, error: new errors_1.AuthInvalidTokenResponseError() };
+            }
+            if (data.session) {
+                await this._saveSession(data.session);
+                await this._notifyAllSubscribers('SIGNED_IN', data.session);
+            }
+            return { data: { user: data.user, session: data.session }, error };
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: { user: null, session: null }, error };
+            }
+            throw error;
+        }
+    }
+    /**
+     * Log in an existing user via a third-party provider.
+     * This method supports the PKCE flow.
+     */
+    async signInWithOAuth(credentials) {
+        var _a, _b, _c, _d;
+        await this._removeSession();
+        return await this._handleProviderSignIn(credentials.provider, {
+            redirectTo: (_a = credentials.options) === null || _a === void 0 ? void 0 : _a.redirectTo,
+            scopes: (_b = credentials.options) === null || _b === void 0 ? void 0 : _b.scopes,
+            queryParams: (_c = credentials.options) === null || _c === void 0 ? void 0 : _c.queryParams,
+            skipBrowserRedirect: (_d = credentials.options) === null || _d === void 0 ? void 0 : _d.skipBrowserRedirect,
         });
     }
     /**
-     * Log in an existing user, or login via a third-party provider.
-     * @type UserCredentials
-     * @param email The user's email address.
-     * @param phone The user's phone number.
-     * @param password The user's password.
-     * @param refreshToken A valid refresh token that was returned on login.
-     * @param provider One of the providers supported by GoTrue.
-     * @param redirectTo A URL to send the user to after they are confirmed (OAuth logins only).
-     * @param shouldCreateUser A boolean flag to indicate whether to automatically create a user on magiclink / otp sign-ins if the user doesn't exist. Defaults to true.
-     * @param scopes A space-separated list of scopes granted to the OAuth application.
+     * Log in an existing user by exchanging an Auth Code issued during the PKCE flow.
      */
-    signIn({ email, phone, password, refreshToken, provider, oidc }, options = {}) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                this._removeSession();
-                if (email && !password) {
-                    const { error } = yield this.api.sendMagicLinkEmail(email, {
-                        redirectTo: options.redirectTo,
-                        shouldCreateUser: options.shouldCreateUser,
-                        captchaToken: options.captchaToken,
-                    });
-                    return { user: null, session: null, error };
-                }
-                if (email && password) {
-                    return this._handleEmailSignIn(email, password, {
-                        redirectTo: options.redirectTo,
-                        captchaToken: options.captchaToken,
-                    });
-                }
-                if (phone && !password) {
-                    const { error } = yield this.api.sendMobileOTP(phone, {
-                        shouldCreateUser: options.shouldCreateUser,
-                        captchaToken: options.captchaToken,
-                    });
-                    return { user: null, session: null, error };
-                }
-                if (phone && password) {
-                    return this._handlePhoneSignIn(phone, password);
-                }
-                if (refreshToken) {
-                    // currentSession and currentUser will be updated to latest on _callRefreshToken using the passed refreshToken
-                    const { error } = yield this._callRefreshToken(refreshToken);
-                    if (error)
-                        throw error;
-                    return {
-                        user: this.currentUser,
-                        session: this.currentSession,
-                        error: null,
-                    };
-                }
-                if (provider) {
-                    return this._handleProviderSignIn(provider, {
-                        redirectTo: options.redirectTo,
-                        scopes: options.scopes,
-                        queryParams: options.queryParams,
-                    });
-                }
-                if (oidc) {
-                    return this._handleOpenIDConnectSignIn(oidc);
-                }
-                throw new Error(`You must provide either an email, phone number, a third-party provider or OpenID Connect.`);
-            }
-            catch (e) {
-                return { user: null, session: null, error: e };
-            }
+    async exchangeCodeForSession(authCode) {
+        await this.initializePromise;
+        return this._acquireLock(-1, async () => {
+            return this._exchangeCodeForSession(authCode);
         });
+    }
+    async _exchangeCodeForSession(authCode) {
+        const codeVerifier = await (0, helpers_1.getItemAsync)(this.storage, `${this.storageKey}-code-verifier`);
+        const { data, error } = await (0, fetch_1._request)(this.fetch, 'POST', `${this.url}/token?grant_type=pkce`, {
+            headers: this.headers,
+            body: {
+                auth_code: authCode,
+                code_verifier: codeVerifier,
+            },
+            xform: fetch_1._sessionResponse,
+        });
+        await (0, helpers_1.removeItemAsync)(this.storage, `${this.storageKey}-code-verifier`);
+        if (error) {
+            return { data: { user: null, session: null }, error };
+        }
+        else if (!data || !data.session || !data.user) {
+            return { data: { user: null, session: null }, error: new errors_1.AuthInvalidTokenResponseError() };
+        }
+        if (data.session) {
+            await this._saveSession(data.session);
+            await this._notifyAllSubscribers('SIGNED_IN', data.session);
+        }
+        return { data, error };
+    }
+    /**
+     * Allows signing in with an OIDC ID token. The authentication provider used
+     * should be enabled and configured.
+     */
+    async signInWithIdToken(credentials) {
+        await this._removeSession();
+        try {
+            const { options, provider, token, access_token, nonce } = credentials;
+            const res = await (0, fetch_1._request)(this.fetch, 'POST', `${this.url}/token?grant_type=id_token`, {
+                headers: this.headers,
+                body: {
+                    provider,
+                    id_token: token,
+                    access_token,
+                    nonce,
+                    gotrue_meta_security: { captcha_token: options === null || options === void 0 ? void 0 : options.captchaToken },
+                },
+                xform: fetch_1._sessionResponse,
+            });
+            const { data, error } = res;
+            if (error) {
+                return { data: { user: null, session: null }, error };
+            }
+            else if (!data || !data.session || !data.user) {
+                return {
+                    data: { user: null, session: null },
+                    error: new errors_1.AuthInvalidTokenResponseError(),
+                };
+            }
+            if (data.session) {
+                await this._saveSession(data.session);
+                await this._notifyAllSubscribers('SIGNED_IN', data.session);
+            }
+            return { data, error };
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: { user: null, session: null }, error };
+            }
+            throw error;
+        }
+    }
+    /**
+     * Log in a user using magiclink or a one-time password (OTP).
+     *
+     * If the `{{ .ConfirmationURL }}` variable is specified in the email template, a magiclink will be sent.
+     * If the `{{ .Token }}` variable is specified in the email template, an OTP will be sent.
+     * If you're using phone sign-ins, only an OTP will be sent. You won't be able to send a magiclink for phone sign-ins.
+     *
+     * Be aware that you may get back an error message that will not distinguish
+     * between the cases where the account does not exist or, that the account
+     * can only be accessed via social login.
+     *
+     * Do note that you will need to configure a Whatsapp sender on Twilio
+     * if you are using phone sign in with the 'whatsapp' channel. The whatsapp
+     * channel is not supported on other providers
+     * at this time.
+     * This method supports PKCE when an email is passed.
+     */
+    async signInWithOtp(credentials) {
+        var _a, _b, _c, _d, _e;
+        try {
+            await this._removeSession();
+            if ('email' in credentials) {
+                const { email, options } = credentials;
+                let codeChallenge = null;
+                let codeChallengeMethod = null;
+                if (this.flowType === 'pkce') {
+                    const codeVerifier = (0, helpers_1.generatePKCEVerifier)();
+                    await (0, helpers_1.setItemAsync)(this.storage, `${this.storageKey}-code-verifier`, codeVerifier);
+                    codeChallenge = await (0, helpers_1.generatePKCEChallenge)(codeVerifier);
+                    codeChallengeMethod = codeVerifier === codeChallenge ? 'plain' : 's256';
+                }
+                const { error } = await (0, fetch_1._request)(this.fetch, 'POST', `${this.url}/otp`, {
+                    headers: this.headers,
+                    body: {
+                        email,
+                        data: (_a = options === null || options === void 0 ? void 0 : options.data) !== null && _a !== void 0 ? _a : {},
+                        create_user: (_b = options === null || options === void 0 ? void 0 : options.shouldCreateUser) !== null && _b !== void 0 ? _b : true,
+                        gotrue_meta_security: { captcha_token: options === null || options === void 0 ? void 0 : options.captchaToken },
+                        code_challenge: codeChallenge,
+                        code_challenge_method: codeChallengeMethod,
+                    },
+                    redirectTo: options === null || options === void 0 ? void 0 : options.emailRedirectTo,
+                });
+                return { data: { user: null, session: null }, error };
+            }
+            if ('phone' in credentials) {
+                const { phone, options } = credentials;
+                const { data, error } = await (0, fetch_1._request)(this.fetch, 'POST', `${this.url}/otp`, {
+                    headers: this.headers,
+                    body: {
+                        phone,
+                        data: (_c = options === null || options === void 0 ? void 0 : options.data) !== null && _c !== void 0 ? _c : {},
+                        create_user: (_d = options === null || options === void 0 ? void 0 : options.shouldCreateUser) !== null && _d !== void 0 ? _d : true,
+                        gotrue_meta_security: { captcha_token: options === null || options === void 0 ? void 0 : options.captchaToken },
+                        channel: (_e = options === null || options === void 0 ? void 0 : options.channel) !== null && _e !== void 0 ? _e : 'sms',
+                    },
+                });
+                return { data: { user: null, session: null, messageId: data === null || data === void 0 ? void 0 : data.message_id }, error };
+            }
+            throw new errors_1.AuthInvalidCredentialsError('You must provide either an email or phone number.');
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: { user: null, session: null }, error };
+            }
+            throw error;
+        }
     }
     /**
      * Log in a user given a User supplied OTP received via mobile.
-     * @param email The user's email address.
-     * @param phone The user's phone number.
-     * @param token The user's password.
-     * @param type The user's verification type.
-     * @param redirectTo A URL or mobile address to send the user to after they are confirmed.
      */
-    verifyOTP(params, options = {}) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                this._removeSession();
-                const { data, error } = yield this.api.verifyOTP(params, options);
-                if (error) {
-                    throw error;
-                }
-                if (!data) {
-                    throw 'An error occurred on token verification.';
-                }
-                let session = null;
-                let user = null;
-                if (data.access_token) {
-                    session = data;
-                    user = session.user;
-                    this._saveSession(session);
-                    this._notifyAllSubscribers('SIGNED_IN');
-                }
-                if (data.id) {
-                    user = data;
-                }
-                return { user, session, error: null };
+    async verifyOtp(params) {
+        var _a, _b;
+        try {
+            if (params.type !== 'email_change' && params.type !== 'phone_change') {
+                // we don't want to remove the authenticated session if the user is performing an email_change or phone_change verification
+                await this._removeSession();
             }
-            catch (e) {
-                return { user: null, session: null, error: e };
+            let redirectTo = undefined;
+            let captchaToken = undefined;
+            if ('options' in params) {
+                redirectTo = (_a = params.options) === null || _a === void 0 ? void 0 : _a.redirectTo;
+                captchaToken = (_b = params.options) === null || _b === void 0 ? void 0 : _b.captchaToken;
             }
-        });
+            const { data, error } = await (0, fetch_1._request)(this.fetch, 'POST', `${this.url}/verify`, {
+                headers: this.headers,
+                body: Object.assign(Object.assign({}, params), { gotrue_meta_security: { captcha_token: captchaToken } }),
+                redirectTo,
+                xform: fetch_1._sessionResponse,
+            });
+            if (error) {
+                throw error;
+            }
+            if (!data) {
+                throw new Error('An error occurred on token verification.');
+            }
+            const session = data.session;
+            const user = data.user;
+            if (session === null || session === void 0 ? void 0 : session.access_token) {
+                await this._saveSession(session);
+                await this._notifyAllSubscribers('SIGNED_IN', session);
+            }
+            return { data: { user, session }, error: null };
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: { user: null, session: null }, error };
+            }
+            throw error;
+        }
     }
     /**
-     * Inside a browser context, `user()` will return the user data, if there is a logged in user.
+     * Attempts a single-sign on using an enterprise Identity Provider. A
+     * successful SSO attempt will redirect the current page to the identity
+     * provider authorization page. The redirect URL is implementation and SSO
+     * protocol specific.
      *
-     * For server-side management, you can get a user through `auth.api.getUserByCookie()`
+     * You can use it by providing a SSO domain. Typically you can extract this
+     * domain by asking users for their email address. If this domain is
+     * registered on the Auth instance the redirect will use that organization's
+     * currently active SSO Identity Provider for the login.
+     *
+     * If you have built an organization-specific login page, you can use the
+     * organization's SSO Identity Provider UUID directly instead.
      */
-    user() {
-        return this.currentUser;
+    async signInWithSSO(params) {
+        var _a, _b, _c;
+        try {
+            await this._removeSession();
+            return await (0, fetch_1._request)(this.fetch, 'POST', `${this.url}/sso`, {
+                body: Object.assign(Object.assign(Object.assign(Object.assign(Object.assign({}, ('providerId' in params ? { provider_id: params.providerId } : null)), ('domain' in params ? { domain: params.domain } : null)), { redirect_to: (_b = (_a = params.options) === null || _a === void 0 ? void 0 : _a.redirectTo) !== null && _b !== void 0 ? _b : undefined }), (((_c = params === null || params === void 0 ? void 0 : params.options) === null || _c === void 0 ? void 0 : _c.captchaToken)
+                    ? { gotrue_meta_security: { captcha_token: params.options.captchaToken } }
+                    : null)), { skip_http_redirect: true }),
+                headers: this.headers,
+                xform: fetch_1._ssoResponse,
+            });
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: null, error };
+            }
+            throw error;
+        }
     }
     /**
-     * Returns the session data, if there is an active session.
+     * Sends a reauthentication OTP to the user's email or phone number.
+     * Requires the user to be signed-in.
      */
-    session() {
-        return this.currentSession;
+    async reauthenticate() {
+        await this.initializePromise;
+        return await this._acquireLock(-1, async () => {
+            return await this._reauthenticate();
+        });
+    }
+    async _reauthenticate() {
+        try {
+            return await this._useSession(async (result) => {
+                const { data: { session }, error: sessionError, } = result;
+                if (sessionError)
+                    throw sessionError;
+                if (!session)
+                    throw new errors_1.AuthSessionMissingError();
+                const { error } = await (0, fetch_1._request)(this.fetch, 'GET', `${this.url}/reauthenticate`, {
+                    headers: this.headers,
+                    jwt: session.access_token,
+                });
+                return { data: { user: null, session: null }, error };
+            });
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: { user: null, session: null }, error };
+            }
+            throw error;
+        }
     }
     /**
-     * Force refreshes the session including the user data in case it was updated in a different session.
+     * Resends an existing signup confirmation email, email change email, SMS OTP or phone change OTP.
      */
-    refreshSession() {
-        var _a;
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                if (!((_a = this.currentSession) === null || _a === void 0 ? void 0 : _a.access_token))
-                    throw new Error('Not logged in.');
-                // currentSession and currentUser will be updated to latest on _callRefreshToken
-                const { error } = yield this._callRefreshToken();
-                if (error)
-                    throw error;
-                return { data: this.currentSession, user: this.currentUser, error: null };
+    async resend(credentials) {
+        try {
+            if (credentials.type != 'email_change' && credentials.type != 'phone_change') {
+                await this._removeSession();
             }
-            catch (e) {
-                return { data: null, user: null, error: e };
+            const endpoint = `${this.url}/resend`;
+            if ('email' in credentials) {
+                const { email, type, options } = credentials;
+                const { error } = await (0, fetch_1._request)(this.fetch, 'POST', endpoint, {
+                    headers: this.headers,
+                    body: {
+                        email,
+                        type,
+                        gotrue_meta_security: { captcha_token: options === null || options === void 0 ? void 0 : options.captchaToken },
+                    },
+                    redirectTo: options === null || options === void 0 ? void 0 : options.emailRedirectTo,
+                });
+                return { data: { user: null, session: null }, error };
             }
+            else if ('phone' in credentials) {
+                const { phone, type, options } = credentials;
+                const { data, error } = await (0, fetch_1._request)(this.fetch, 'POST', endpoint, {
+                    headers: this.headers,
+                    body: {
+                        phone,
+                        type,
+                        gotrue_meta_security: { captcha_token: options === null || options === void 0 ? void 0 : options.captchaToken },
+                    },
+                });
+                return { data: { user: null, session: null, messageId: data === null || data === void 0 ? void 0 : data.message_id }, error };
+            }
+            throw new errors_1.AuthInvalidCredentialsError('You must provide either an email or phone number and a type');
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: { user: null, session: null }, error };
+            }
+            throw error;
+        }
+    }
+    /**
+     * Returns the session, refreshing it if necessary.
+     * The session returned can be null if the session is not detected which can happen in the event a user is not signed-in or has logged out.
+     */
+    async getSession() {
+        await this.initializePromise;
+        return this._acquireLock(-1, async () => {
+            return this._useSession(async (result) => {
+                return result;
+            });
         });
     }
     /**
-     * Updates user data, if there is a logged in user.
+     * Acquires a global lock based on the storage key.
      */
-    update(attributes) {
-        var _a;
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                if (!((_a = this.currentSession) === null || _a === void 0 ? void 0 : _a.access_token))
-                    throw new Error('Not logged in.');
-                const { user, error } = yield this.api.updateUser(this.currentSession.access_token, attributes);
-                if (error)
-                    throw error;
-                if (!user)
-                    throw Error('Invalid user data.');
-                const session = Object.assign(Object.assign({}, this.currentSession), { user });
-                this._saveSession(session);
-                this._notifyAllSubscribers('USER_UPDATED');
-                return { data: user, user, error: null };
+    async _acquireLock(acquireTimeout, fn) {
+        this._debug('#_acquireLock', 'begin', acquireTimeout);
+        try {
+            if (this.lockAcquired) {
+                const last = this.pendingInLock.length
+                    ? this.pendingInLock[this.pendingInLock.length - 1]
+                    : Promise.resolve();
+                const result = (async () => {
+                    await last;
+                    return await fn();
+                })();
+                this.pendingInLock.push((async () => {
+                    try {
+                        await result;
+                    }
+                    catch (e) {
+                        // we jsut care if it finished
+                    }
+                })());
+                return result;
             }
-            catch (e) {
-                return { data: null, user: null, error: e };
-            }
-        });
-    }
-    /**
-     * Sets the session data from refresh_token and returns current Session and Error
-     * @param refresh_token a JWT token
-     */
-    setSession(refresh_token) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                if (!refresh_token) {
-                    throw new Error('No current session.');
+            return await this.lock(`lock:${this.storageKey}`, acquireTimeout, async () => {
+                this._debug('#_acquireLock', 'lock acquired for storage key', this.storageKey);
+                try {
+                    this.lockAcquired = true;
+                    const result = fn();
+                    this.pendingInLock.push((async () => {
+                        try {
+                            await result;
+                        }
+                        catch (e) {
+                            // we just care if it finished
+                        }
+                    })());
+                    await result;
+                    // keep draining the queue until there's nothing to wait on
+                    while (this.pendingInLock.length) {
+                        const waitOn = [...this.pendingInLock];
+                        await Promise.all(waitOn);
+                        this.pendingInLock.splice(0, waitOn.length);
+                    }
+                    return await result;
                 }
-                const { data, error } = yield this.api.refreshAccessToken(refresh_token);
+                finally {
+                    this._debug('#_acquireLock', 'lock released for storage key', this.storageKey);
+                    this.lockAcquired = false;
+                }
+            });
+        }
+        finally {
+            this._debug('#_acquireLock', 'end');
+        }
+    }
+    /**
+     * Use instead of {@link #getSession} inside the library. It is
+     * semantically usually what you want, as getting a session involves some
+     * processing afterwards that requires only one client operating on the
+     * session at once across multiple tabs or processes.
+     */
+    async _useSession(fn) {
+        this._debug('#_useSession', 'begin');
+        try {
+            // the use of __loadSession here is the only correct use of the function!
+            const result = await this.__loadSession();
+            return await fn(result);
+        }
+        finally {
+            this._debug('#_useSession', 'end');
+        }
+    }
+    /**
+     * NEVER USE DIRECTLY!
+     *
+     * Always use {@link #_useSession}.
+     */
+    async __loadSession() {
+        this._debug('#__loadSession()', 'begin');
+        if (!this.lockAcquired) {
+            this._debug('#__loadSession()', 'used outside of an acquired lock!', new Error().stack);
+        }
+        try {
+            let currentSession = null;
+            if (this.persistSession) {
+                const maybeSession = await (0, helpers_1.getItemAsync)(this.storage, this.storageKey);
+                this._debug('#getSession()', 'session from storage', maybeSession);
+                if (maybeSession !== null) {
+                    if (this._isValidSession(maybeSession)) {
+                        currentSession = maybeSession;
+                    }
+                    else {
+                        this._debug('#getSession()', 'session from storage is not valid');
+                        await this._removeSession();
+                    }
+                }
+            }
+            else {
+                currentSession = this.inMemorySession;
+                this._debug('#getSession()', 'session from memory', currentSession);
+            }
+            if (!currentSession) {
+                return { data: { session: null }, error: null };
+            }
+            const hasExpired = currentSession.expires_at
+                ? currentSession.expires_at <= Date.now() / 1000
+                : false;
+            this._debug('#__loadSession()', `session has${hasExpired ? '' : ' not'} expired`, 'expires_at', currentSession.expires_at);
+            if (!hasExpired) {
+                return { data: { session: currentSession }, error: null };
+            }
+            const { session, error } = await this._callRefreshToken(currentSession.refresh_token);
+            if (error) {
+                return { data: { session: null }, error };
+            }
+            return { data: { session }, error: null };
+        }
+        finally {
+            this._debug('#__loadSession()', 'end');
+        }
+    }
+    /**
+     * Gets the current user details if there is an existing session.
+     * @param jwt Takes in an optional access token jwt. If no jwt is provided, getUser() will attempt to get the jwt from the current session.
+     */
+    async getUser(jwt) {
+        if (jwt) {
+            return await this._getUser(jwt);
+        }
+        await this.initializePromise;
+        return this._acquireLock(-1, async () => {
+            return await this._getUser();
+        });
+    }
+    async _getUser(jwt) {
+        try {
+            if (jwt) {
+                return await (0, fetch_1._request)(this.fetch, 'GET', `${this.url}/user`, {
+                    headers: this.headers,
+                    jwt: jwt,
+                    xform: fetch_1._userResponse,
+                });
+            }
+            return await this._useSession(async (result) => {
+                var _a, _b;
+                const { data, error } = result;
                 if (error) {
-                    return { session: null, error: error };
+                    throw error;
                 }
-                this._saveSession(data);
-                this._notifyAllSubscribers('SIGNED_IN');
-                return { session: data, error: null };
+                return await (0, fetch_1._request)(this.fetch, 'GET', `${this.url}/user`, {
+                    headers: this.headers,
+                    jwt: (_b = (_a = data.session) === null || _a === void 0 ? void 0 : _a.access_token) !== null && _b !== void 0 ? _b : undefined,
+                    xform: fetch_1._userResponse,
+                });
+            });
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: { user: null }, error };
             }
-            catch (e) {
-                return { error: e, session: null };
-            }
-        });
+            throw error;
+        }
     }
     /**
-     * Overrides the JWT on the current client. The JWT will then be sent in all subsequent network requests.
-     * @param access_token a jwt access token
+     * Updates user data for a logged in user.
      */
-    setAuth(access_token) {
-        this.currentSession = Object.assign(Object.assign({}, this.currentSession), { access_token, token_type: 'bearer', user: this.user() });
-        this._notifyAllSubscribers('TOKEN_REFRESHED');
-        return this.currentSession;
+    async updateUser(attributes, options = {}) {
+        await this.initializePromise;
+        return await this._acquireLock(-1, async () => {
+            return await this._updateUser(attributes, options);
+        });
+    }
+    async _updateUser(attributes, options = {}) {
+        try {
+            return await this._useSession(async (result) => {
+                const { data: sessionData, error: sessionError } = result;
+                if (sessionError) {
+                    throw sessionError;
+                }
+                if (!sessionData.session) {
+                    throw new errors_1.AuthSessionMissingError();
+                }
+                const session = sessionData.session;
+                const { data, error: userError } = await (0, fetch_1._request)(this.fetch, 'PUT', `${this.url}/user`, {
+                    headers: this.headers,
+                    redirectTo: options === null || options === void 0 ? void 0 : options.emailRedirectTo,
+                    body: attributes,
+                    jwt: session.access_token,
+                    xform: fetch_1._userResponse,
+                });
+                if (userError)
+                    throw userError;
+                session.user = data.user;
+                await this._saveSession(session);
+                await this._notifyAllSubscribers('USER_UPDATED', session);
+                return { data: { user: session.user }, error: null };
+            });
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: { user: null }, error };
+            }
+            throw error;
+        }
+    }
+    /**
+     * Decodes a JWT (without performing any validation).
+     */
+    _decodeJWT(jwt) {
+        return (0, helpers_1.decodeJWTPayload)(jwt);
+    }
+    /**
+     * Sets the session data from the current session. If the current session is expired, setSession will take care of refreshing it to obtain a new session.
+     * If the refresh token or access token in the current session is invalid, an error will be thrown.
+     * @param currentSession The current session that minimally contains an access token and refresh token.
+     */
+    async setSession(currentSession) {
+        await this.initializePromise;
+        return await this._acquireLock(-1, async () => {
+            return await this._setSession(currentSession);
+        });
+    }
+    async _setSession(currentSession) {
+        try {
+            if (!currentSession.access_token || !currentSession.refresh_token) {
+                throw new errors_1.AuthSessionMissingError();
+            }
+            const timeNow = Date.now() / 1000;
+            let expiresAt = timeNow;
+            let hasExpired = true;
+            let session = null;
+            const payload = (0, helpers_1.decodeJWTPayload)(currentSession.access_token);
+            if (payload.exp) {
+                expiresAt = payload.exp;
+                hasExpired = expiresAt <= timeNow;
+            }
+            if (hasExpired) {
+                const { session: refreshedSession, error } = await this._callRefreshToken(currentSession.refresh_token);
+                if (error) {
+                    return { data: { user: null, session: null }, error: error };
+                }
+                if (!refreshedSession) {
+                    return { data: { user: null, session: null }, error: null };
+                }
+                session = refreshedSession;
+            }
+            else {
+                const { data, error } = await this._getUser(currentSession.access_token);
+                if (error) {
+                    throw error;
+                }
+                session = {
+                    access_token: currentSession.access_token,
+                    refresh_token: currentSession.refresh_token,
+                    user: data.user,
+                    token_type: 'bearer',
+                    expires_in: expiresAt - timeNow,
+                    expires_at: expiresAt,
+                };
+                await this._saveSession(session);
+                await this._notifyAllSubscribers('SIGNED_IN', session);
+            }
+            return { data: { user: session.user, session }, error: null };
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: { session: null, user: null }, error };
+            }
+            throw error;
+        }
+    }
+    /**
+     * Returns a new session, regardless of expiry status.
+     * Takes in an optional current session. If not passed in, then refreshSession() will attempt to retrieve it from getSession().
+     * If the current session's refresh token is invalid, an error will be thrown.
+     * @param currentSession The current session. If passed in, it must contain a refresh token.
+     */
+    async refreshSession(currentSession) {
+        await this.initializePromise;
+        return await this._acquireLock(-1, async () => {
+            return await this._refreshSession(currentSession);
+        });
+    }
+    async _refreshSession(currentSession) {
+        try {
+            return await this._useSession(async (result) => {
+                var _a;
+                if (!currentSession) {
+                    const { data, error } = result;
+                    if (error) {
+                        throw error;
+                    }
+                    currentSession = (_a = data.session) !== null && _a !== void 0 ? _a : undefined;
+                }
+                if (!(currentSession === null || currentSession === void 0 ? void 0 : currentSession.refresh_token)) {
+                    throw new errors_1.AuthSessionMissingError();
+                }
+                const { session, error } = await this._callRefreshToken(currentSession.refresh_token);
+                if (error) {
+                    return { data: { user: null, session: null }, error: error };
+                }
+                if (!session) {
+                    return { data: { user: null, session: null }, error: null };
+                }
+                return { data: { user: session.user, session }, error: null };
+            });
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: { user: null, session: null }, error };
+            }
+            throw error;
+        }
     }
     /**
      * Gets the session data from a URL string
-     * @param options.storeSession Optionally store the session in the browser
      */
-    getSessionFromUrl(options) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                if (!(0, helpers_1.isBrowser)())
-                    throw new Error('No browser detected.');
-                const error_description = (0, helpers_1.getParameterByName)('error_description');
-                if (error_description)
-                    throw new Error(error_description);
-                const provider_token = (0, helpers_1.getParameterByName)('provider_token');
-                const access_token = (0, helpers_1.getParameterByName)('access_token');
-                if (!access_token)
-                    throw new Error('No access_token detected.');
-                const expires_in = (0, helpers_1.getParameterByName)('expires_in');
-                if (!expires_in)
-                    throw new Error('No expires_in detected.');
-                const refresh_token = (0, helpers_1.getParameterByName)('refresh_token');
-                if (!refresh_token)
-                    throw new Error('No refresh_token detected.');
-                const token_type = (0, helpers_1.getParameterByName)('token_type');
-                if (!token_type)
-                    throw new Error('No token_type detected.');
-                const timeNow = Math.round(Date.now() / 1000);
-                const expires_at = timeNow + parseInt(expires_in);
-                const { user, error } = yield this.api.getUser(access_token);
+    async _getSessionFromURL(isPKCEFlow) {
+        try {
+            if (!(0, helpers_1.isBrowser)())
+                throw new errors_1.AuthImplicitGrantRedirectError('No browser detected.');
+            if (this.flowType === 'implicit' && !this._isImplicitGrantFlow()) {
+                throw new errors_1.AuthImplicitGrantRedirectError('Not a valid implicit grant flow url.');
+            }
+            else if (this.flowType == 'pkce' && !isPKCEFlow) {
+                throw new errors_1.AuthPKCEGrantCodeExchangeError('Not a valid PKCE flow url.');
+            }
+            const params = (0, helpers_1.parseParametersFromURL)(window.location.href);
+            if (isPKCEFlow) {
+                if (!params.code)
+                    throw new errors_1.AuthPKCEGrantCodeExchangeError('No code detected.');
+                const { data, error } = await this._exchangeCodeForSession(params.code);
                 if (error)
                     throw error;
-                const session = {
-                    provider_token,
-                    access_token,
-                    expires_in: parseInt(expires_in),
-                    expires_at,
-                    refresh_token,
-                    token_type,
-                    user: user,
-                };
-                if (options === null || options === void 0 ? void 0 : options.storeSession) {
-                    this._saveSession(session);
-                    const recoveryMode = (0, helpers_1.getParameterByName)('type');
-                    this._notifyAllSubscribers('SIGNED_IN');
-                    if (recoveryMode === 'recovery') {
-                        this._notifyAllSubscribers('PASSWORD_RECOVERY');
-                    }
-                }
-                // Remove tokens from URL
-                window.location.hash = '';
-                return { data: session, error: null };
+                const url = new URL(window.location.href);
+                url.searchParams.delete('code');
+                window.history.replaceState(window.history.state, '', url.toString());
+                return { data: { session: data.session, redirectType: null }, error: null };
             }
-            catch (e) {
-                return { data: null, error: e };
+            if (params.error || params.error_description || params.error_code) {
+                throw new errors_1.AuthImplicitGrantRedirectError(params.error_description || 'Error in URL with unspecified error_description', {
+                    error: params.error || 'unspecified_error',
+                    code: params.error_code || 'unspecified_code',
+                });
             }
-        });
+            const { provider_token, provider_refresh_token, access_token, refresh_token, expires_in, token_type, } = params;
+            if (!access_token || !expires_in || !refresh_token || !token_type) {
+                throw new errors_1.AuthImplicitGrantRedirectError('No session defined in URL');
+            }
+            const timeNow = Math.round(Date.now() / 1000);
+            const expiresIn = parseInt(expires_in);
+            const expires_at = timeNow + expiresIn;
+            const { data, error } = await this._getUser(access_token);
+            if (error)
+                throw error;
+            const session = {
+                provider_token,
+                provider_refresh_token,
+                access_token,
+                expires_in: expiresIn,
+                expires_at,
+                refresh_token,
+                token_type,
+                user: data.user,
+            };
+            // Remove tokens from URL
+            window.location.hash = '';
+            this._debug('#_getSessionFromURL()', 'clearing window.location.hash');
+            return { data: { session, redirectType: params.type }, error: null };
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: { session: null, redirectType: null }, error };
+            }
+            throw error;
+        }
+    }
+    /**
+     * Checks if the current URL contains parameters given by an implicit oauth grant flow (https://www.rfc-editor.org/rfc/rfc6749.html#section-4.2)
+     */
+    _isImplicitGrantFlow() {
+        const params = (0, helpers_1.parseParametersFromURL)(window.location.href);
+        return !!((0, helpers_1.isBrowser)() && (params.access_token || params.error_description));
+    }
+    /**
+     * Checks if the current URL and backing storage contain parameters given by a PKCE flow
+     */
+    async _isPKCEFlow() {
+        const params = (0, helpers_1.parseParametersFromURL)(window.location.href);
+        const currentStorageContent = await (0, helpers_1.getItemAsync)(this.storage, `${this.storageKey}-code-verifier`);
+        return !!(params.code && currentStorageContent);
     }
     /**
      * Inside a browser context, `signOut()` will remove the logged in user from the browser session
-     * and log them out - removing all items from localstorage and then trigger a "SIGNED_OUT" event.
+     * and log them out - removing all items from localstorage and then trigger a `"SIGNED_OUT"` event.
      *
-     * For server-side management, you can revoke all refresh tokens for a user by passing a user's JWT through to `auth.api.signOut(JWT: string)`. There is no way to revoke a user's session JWT before it automatically expires
+     * For server-side management, you can revoke all refresh tokens for a user by passing a user's JWT through to `auth.api.signOut(JWT: string)`.
+     * There is no way to revoke a user's access token jwt until it expires. It is recommended to set a shorter expiry on the jwt for this reason.
+     *
+     * If using others scope, no `SIGNED_OUT` event is fired!
      */
-    signOut() {
-        var _a;
-        return __awaiter(this, void 0, void 0, function* () {
-            const accessToken = (_a = this.currentSession) === null || _a === void 0 ? void 0 : _a.access_token;
-            this._removeSession();
-            this._notifyAllSubscribers('SIGNED_OUT');
+    async signOut(options = { scope: 'global' }) {
+        await this.initializePromise;
+        return await this._acquireLock(-1, async () => {
+            return await this._signOut(options);
+        });
+    }
+    async _signOut({ scope } = { scope: 'global' }) {
+        return await this._useSession(async (result) => {
+            var _a;
+            const { data, error: sessionError } = result;
+            if (sessionError) {
+                return { error: sessionError };
+            }
+            const accessToken = (_a = data.session) === null || _a === void 0 ? void 0 : _a.access_token;
             if (accessToken) {
-                const { error } = yield this.api.signOut(accessToken);
-                if (error)
-                    return { error };
+                const { error } = await this.admin.signOut(accessToken, scope);
+                if (error) {
+                    // ignore 404s since user might not exist anymore
+                    // ignore 401s since an invalid or expired JWT should sign out the current session
+                    if (!((0, errors_1.isAuthApiError)(error) && (error.status === 404 || error.status === 401))) {
+                        return { error };
+                    }
+                }
+            }
+            if (scope !== 'others') {
+                await this._removeSession();
+                await (0, helpers_1.removeItemAsync)(this.storage, `${this.storageKey}-code-verifier`);
+                await this._notifyAllSubscribers('SIGNED_OUT', null);
             }
             return { error: null };
         });
     }
     /**
      * Receive a notification every time an auth event happens.
-     * @returns {Subscription} A subscription object which can be used to unsubscribe itself.
+     * @param callback A callback function to be invoked when an auth event happens.
      */
     onAuthStateChange(callback) {
+        const id = (0, helpers_1.uuid)();
+        const subscription = {
+            id,
+            callback,
+            unsubscribe: () => {
+                this._debug('#unsubscribe()', 'state change callback with id removed', id);
+                this.stateChangeEmitters.delete(id);
+            },
+        };
+        this._debug('#onAuthStateChange()', 'registered callback with id', id);
+        this.stateChangeEmitters.set(id, subscription);
+        (async () => {
+            await this.initializePromise;
+            await this._acquireLock(-1, async () => {
+                this._emitInitialSession(id);
+            });
+        })();
+        return { data: { subscription } };
+    }
+    async _emitInitialSession(id) {
+        return await this._useSession(async (result) => {
+            var _a, _b;
+            try {
+                const { data: { session }, error, } = result;
+                if (error)
+                    throw error;
+                await ((_a = this.stateChangeEmitters.get(id)) === null || _a === void 0 ? void 0 : _a.callback('INITIAL_SESSION', session));
+                this._debug('INITIAL_SESSION', 'callback id', id, 'session', session);
+            }
+            catch (err) {
+                await ((_b = this.stateChangeEmitters.get(id)) === null || _b === void 0 ? void 0 : _b.callback('INITIAL_SESSION', null));
+                this._debug('INITIAL_SESSION', 'callback id', id, 'error', err);
+                console.error(err);
+            }
+        });
+    }
+    /**
+     * Sends a password reset request to an email address.
+     * This method supports the PKCE flow.
+     * @param email The email address of the user.
+     * @param options.redirectTo The URL to send the user to after they click the password reset link.
+     * @param options.captchaToken Verification token received when the user completes the captcha on the site.
+     */
+    async resetPasswordForEmail(email, options = {}) {
+        let codeChallenge = null;
+        let codeChallengeMethod = null;
+        if (this.flowType === 'pkce') {
+            const codeVerifier = (0, helpers_1.generatePKCEVerifier)();
+            await (0, helpers_1.setItemAsync)(this.storage, `${this.storageKey}-code-verifier`, codeVerifier);
+            codeChallenge = await (0, helpers_1.generatePKCEChallenge)(codeVerifier);
+            codeChallengeMethod = codeVerifier === codeChallenge ? 'plain' : 's256';
+        }
         try {
-            const id = (0, helpers_1.uuid)();
-            const subscription = {
-                id,
-                callback,
-                unsubscribe: () => {
-                    this.stateChangeEmitters.delete(id);
+            return await (0, fetch_1._request)(this.fetch, 'POST', `${this.url}/recover`, {
+                body: {
+                    email,
+                    code_challenge: codeChallenge,
+                    code_challenge_method: codeChallengeMethod,
+                    gotrue_meta_security: { captcha_token: options.captchaToken },
                 },
-            };
-            this.stateChangeEmitters.set(id, subscription);
-            return { data: subscription, error: null };
+                headers: this.headers,
+                redirectTo: options.redirectTo,
+            });
         }
-        catch (e) {
-            return { data: null, error: e };
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: null, error };
+            }
+            throw error;
         }
     }
-    _handleEmailSignIn(email, password, options = {}) {
-        var _a, _b;
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const { data, error } = yield this.api.signInWithEmail(email, password, {
-                    redirectTo: options.redirectTo,
-                    captchaToken: options.captchaToken,
+    /**
+     * Generates a new JWT.
+     * @param refreshToken A valid refresh token that was returned on login.
+     */
+    async _refreshAccessToken(refreshToken) {
+        const debugName = `#_refreshAccessToken(${refreshToken.substring(0, 5)}...)`;
+        this._debug(debugName, 'begin');
+        try {
+            const startedAt = Date.now();
+            // will attempt to refresh the token with exponential backoff
+            return await (0, helpers_1.retryable)(async (attempt) => {
+                await (0, helpers_1.sleep)(attempt * 200); // 0, 200, 400, 800, ...
+                this._debug(debugName, 'refreshing attempt', attempt);
+                return await (0, fetch_1._request)(this.fetch, 'POST', `${this.url}/token?grant_type=refresh_token`, {
+                    body: { refresh_token: refreshToken },
+                    headers: this.headers,
+                    xform: fetch_1._sessionResponse,
                 });
-                if (error || !data)
-                    return { data: null, user: null, session: null, error };
-                if (((_a = data === null || data === void 0 ? void 0 : data.user) === null || _a === void 0 ? void 0 : _a.confirmed_at) || ((_b = data === null || data === void 0 ? void 0 : data.user) === null || _b === void 0 ? void 0 : _b.email_confirmed_at)) {
-                    this._saveSession(data);
-                    this._notifyAllSubscribers('SIGNED_IN');
-                }
-                return { data, user: data.user, session: data, error: null };
+            }, (attempt, _, result) => result &&
+                result.error &&
+                (0, errors_1.isAuthRetryableFetchError)(result.error) &&
+                // retryable only if the request can be sent before the backoff overflows the tick duration
+                Date.now() + (attempt + 1) * 200 - startedAt < AUTO_REFRESH_TICK_DURATION);
+        }
+        catch (error) {
+            this._debug(debugName, 'error', error);
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: { session: null, user: null }, error };
             }
-            catch (e) {
-                return { data: null, user: null, session: null, error: e };
-            }
-        });
+            throw error;
+        }
+        finally {
+            this._debug(debugName, 'end');
+        }
     }
-    _handlePhoneSignIn(phone, password, options = {}) {
-        var _a;
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const { data, error } = yield this.api.signInWithPhone(phone, password, options);
-                if (error || !data)
-                    return { data: null, user: null, session: null, error };
-                if ((_a = data === null || data === void 0 ? void 0 : data.user) === null || _a === void 0 ? void 0 : _a.phone_confirmed_at) {
-                    this._saveSession(data);
-                    this._notifyAllSubscribers('SIGNED_IN');
-                }
-                return { data, user: data.user, session: data, error: null };
-            }
-            catch (e) {
-                return { data: null, user: null, session: null, error: e };
-            }
-        });
+    _isValidSession(maybeSession) {
+        const isValidSession = typeof maybeSession === 'object' &&
+            maybeSession !== null &&
+            'access_token' in maybeSession &&
+            'refresh_token' in maybeSession &&
+            'expires_at' in maybeSession;
+        return isValidSession;
     }
-    _handleProviderSignIn(provider, options = {}) {
-        const url = this.api.getUrlForProvider(provider, {
+    async _handleProviderSignIn(provider, options) {
+        const url = await this._getUrlForProvider(provider, {
             redirectTo: options.redirectTo,
             scopes: options.scopes,
             queryParams: options.queryParams,
         });
-        try {
-            // try to open on the browser
-            if ((0, helpers_1.isBrowser)()) {
-                window.location.href = url;
-            }
-            return { provider, url, data: null, session: null, user: null, error: null };
+        this._debug('#_handleProviderSignIn()', 'provider', provider, 'options', options, 'url', url);
+        // try to open on the browser
+        if ((0, helpers_1.isBrowser)() && !options.skipBrowserRedirect) {
+            window.location.assign(url);
         }
-        catch (e) {
-            // fallback to returning the URL
-            if (url)
-                return { provider, url, data: null, session: null, user: null, error: null };
-            return { data: null, user: null, session: null, error: e };
-        }
-    }
-    _handleOpenIDConnectSignIn({ id_token, nonce, client_id, issuer, provider, }) {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (id_token && nonce && ((client_id && issuer) || provider)) {
-                try {
-                    const { data, error } = yield this.api.signInWithOpenIDConnect({
-                        id_token,
-                        nonce,
-                        client_id,
-                        issuer,
-                        provider,
-                    });
-                    if (error || !data)
-                        return { user: null, session: null, error };
-                    this._saveSession(data);
-                    this._notifyAllSubscribers('SIGNED_IN');
-                    return { user: data.user, session: data, error: null };
-                }
-                catch (e) {
-                    return { user: null, session: null, error: e };
-                }
-            }
-            throw new Error(`You must provide a OpenID Connect provider with your id token and nonce.`);
-        });
-    }
-    /**
-     * Attempts to get the session from LocalStorage
-     * Note: this should never be async (even for React Native), as we need it to return immediately in the constructor.
-     */
-    _recoverSession() {
-        try {
-            const data = (0, helpers_1.getItemSynchronously)(this.localStorage, constants_1.STORAGE_KEY);
-            if (!data)
-                return null;
-            const { currentSession, expiresAt } = data;
-            const timeNow = Math.round(Date.now() / 1000);
-            if (expiresAt >= timeNow + constants_1.EXPIRY_MARGIN && (currentSession === null || currentSession === void 0 ? void 0 : currentSession.user)) {
-                this._saveSession(currentSession);
-                this._notifyAllSubscribers('SIGNED_IN');
-            }
-        }
-        catch (error) {
-            console.log('error', error);
-        }
+        return { data: { provider, url }, error: null };
     }
     /**
      * Recovers the session from LocalStorage and refreshes
      * Note: this method is async to accommodate for AsyncStorage e.g. in React native.
      */
-    _recoverAndRefresh() {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const data = yield (0, helpers_1.getItemAsync)(this.localStorage, constants_1.STORAGE_KEY);
-                if (!data)
-                    return null;
-                const { currentSession, expiresAt } = data;
-                const timeNow = Math.round(Date.now() / 1000);
-                if (expiresAt < timeNow + constants_1.EXPIRY_MARGIN) {
-                    if (this.autoRefreshToken && currentSession.refresh_token) {
-                        this.networkRetries++;
-                        const { error } = yield this._callRefreshToken(currentSession.refresh_token);
-                        if (error) {
-                            console.log(error.message);
-                            if (error.message === constants_1.NETWORK_FAILURE.ERROR_MESSAGE &&
-                                this.networkRetries < constants_1.NETWORK_FAILURE.MAX_RETRIES) {
-                                if (this.refreshTokenTimer)
-                                    clearTimeout(this.refreshTokenTimer);
-                                this.refreshTokenTimer = setTimeout(() => this._recoverAndRefresh(), Math.pow(constants_1.NETWORK_FAILURE.RETRY_INTERVAL, this.networkRetries) * 100 // exponential backoff
-                                );
-                                return;
-                            }
-                            yield this._removeSession();
-                        }
-                        this.networkRetries = 0;
-                    }
-                    else {
-                        this._removeSession();
-                    }
-                }
-                else if (!currentSession) {
-                    console.log('Current session is missing data.');
-                    this._removeSession();
-                }
-                else {
-                    // should be handled on _recoverSession method already
-                    // But we still need the code here to accommodate for AsyncStorage e.g. in React native
-                    this._saveSession(currentSession);
-                    this._notifyAllSubscribers('SIGNED_IN');
-                }
-            }
-            catch (err) {
-                console.error(err);
-                return null;
-            }
-        });
-    }
-    _callRefreshToken(refresh_token) {
+    async _recoverAndRefresh() {
         var _a;
-        if (refresh_token === void 0) { refresh_token = (_a = this.currentSession) === null || _a === void 0 ? void 0 : _a.refresh_token; }
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                if (!refresh_token) {
-                    throw new Error('No current session.');
+        const debugName = '#_recoverAndRefresh()';
+        this._debug(debugName, 'begin');
+        try {
+            const currentSession = await (0, helpers_1.getItemAsync)(this.storage, this.storageKey);
+            this._debug(debugName, 'session from storage', currentSession);
+            if (!this._isValidSession(currentSession)) {
+                this._debug(debugName, 'session is not valid');
+                if (currentSession !== null) {
+                    await this._removeSession();
                 }
-                const { data, error } = yield this.api.refreshAccessToken(refresh_token);
-                if (error)
-                    throw error;
-                if (!data)
-                    throw Error('Invalid session data.');
-                this._saveSession(data);
-                this._notifyAllSubscribers('TOKEN_REFRESHED');
-                this._notifyAllSubscribers('SIGNED_IN');
-                return { data, error: null };
+                return;
             }
-            catch (e) {
-                return { data: null, error: e };
+            const timeNow = Math.round(Date.now() / 1000);
+            const expiresWithMargin = ((_a = currentSession.expires_at) !== null && _a !== void 0 ? _a : Infinity) < timeNow + constants_1.EXPIRY_MARGIN;
+            this._debug(debugName, `session has${expiresWithMargin ? '' : ' not'} expired with margin of ${constants_1.EXPIRY_MARGIN}s`);
+            if (expiresWithMargin) {
+                if (this.autoRefreshToken && currentSession.refresh_token) {
+                    const { error } = await this._callRefreshToken(currentSession.refresh_token);
+                    if (error) {
+                        console.error(error);
+                        if (!(0, errors_1.isAuthRetryableFetchError)(error)) {
+                            this._debug(debugName, 'refresh failed with a non-retryable error, removing the session', error);
+                            await this._removeSession();
+                        }
+                    }
+                }
             }
-        });
+            else {
+                // no need to persist currentSession again, as we just loaded it from
+                // local storage; persisting it again may overwrite a value saved by
+                // another client with access to the same local storage
+                await this._notifyAllSubscribers('SIGNED_IN', currentSession);
+            }
+        }
+        catch (err) {
+            this._debug(debugName, 'error', err);
+            console.error(err);
+            return;
+        }
+        finally {
+            this._debug(debugName, 'end');
+        }
     }
-    _notifyAllSubscribers(event) {
-        this.stateChangeEmitters.forEach((x) => x.callback(event, this.currentSession));
+    async _callRefreshToken(refreshToken) {
+        var _a, _b;
+        if (!refreshToken) {
+            throw new errors_1.AuthSessionMissingError();
+        }
+        // refreshing is already in progress
+        if (this.refreshingDeferred) {
+            return this.refreshingDeferred.promise;
+        }
+        const debugName = `#_callRefreshToken(${refreshToken.substring(0, 5)}...)`;
+        this._debug(debugName, 'begin');
+        try {
+            this.refreshingDeferred = new helpers_1.Deferred();
+            const { data, error } = await this._refreshAccessToken(refreshToken);
+            if (error)
+                throw error;
+            if (!data.session)
+                throw new errors_1.AuthSessionMissingError();
+            await this._saveSession(data.session);
+            await this._notifyAllSubscribers('TOKEN_REFRESHED', data.session);
+            const result = { session: data.session, error: null };
+            this.refreshingDeferred.resolve(result);
+            return result;
+        }
+        catch (error) {
+            this._debug(debugName, 'error', error);
+            if ((0, errors_1.isAuthError)(error)) {
+                const result = { session: null, error };
+                (_a = this.refreshingDeferred) === null || _a === void 0 ? void 0 : _a.resolve(result);
+                return result;
+            }
+            (_b = this.refreshingDeferred) === null || _b === void 0 ? void 0 : _b.reject(error);
+            throw error;
+        }
+        finally {
+            this.refreshingDeferred = null;
+            this._debug(debugName, 'end');
+        }
+    }
+    async _notifyAllSubscribers(event, session, broadcast = true) {
+        const debugName = `#_notifyAllSubscribers(${event})`;
+        this._debug(debugName, 'begin', session, `broadcast = ${broadcast}`);
+        try {
+            if (this.broadcastChannel && broadcast) {
+                this.broadcastChannel.postMessage({ event, session });
+            }
+            const errors = [];
+            const promises = Array.from(this.stateChangeEmitters.values()).map(async (x) => {
+                try {
+                    await x.callback(event, session);
+                }
+                catch (e) {
+                    errors.push(e);
+                }
+            });
+            await Promise.all(promises);
+            if (errors.length > 0) {
+                for (let i = 0; i < errors.length; i += 1) {
+                    console.error(errors[i]);
+                }
+                throw errors[0];
+            }
+        }
+        finally {
+            this._debug(debugName, 'end');
+        }
     }
     /**
      * set currentSession and currentUser
      * process to _startAutoRefreshToken if possible
      */
-    _saveSession(session) {
-        this.currentSession = session;
-        this.currentUser = session.user;
-        const expiresAt = session.expires_at;
-        if (expiresAt) {
-            const timeNow = Math.round(Date.now() / 1000);
-            const expiresIn = expiresAt - timeNow;
-            const refreshDurationBeforeExpires = expiresIn > constants_1.EXPIRY_MARGIN ? constants_1.EXPIRY_MARGIN : 0.5;
-            this._startAutoRefreshToken((expiresIn - refreshDurationBeforeExpires) * 1000);
+    async _saveSession(session) {
+        this._debug('#_saveSession()', session);
+        if (!this.persistSession) {
+            this.inMemorySession = session;
         }
-        // Do we need any extra check before persist session
-        // access_token or user ?
         if (this.persistSession && session.expires_at) {
-            this._persistSession(this.currentSession);
+            await this._persistSession(session);
         }
     }
     _persistSession(currentSession) {
-        const data = { currentSession, expiresAt: currentSession.expires_at };
-        (0, helpers_1.setItemAsync)(this.localStorage, constants_1.STORAGE_KEY, data);
+        this._debug('#_persistSession()', currentSession);
+        return (0, helpers_1.setItemAsync)(this.storage, this.storageKey, currentSession);
     }
-    _removeSession() {
-        return __awaiter(this, void 0, void 0, function* () {
-            this.currentSession = null;
-            this.currentUser = null;
-            if (this.refreshTokenTimer)
-                clearTimeout(this.refreshTokenTimer);
-            (0, helpers_1.removeItemAsync)(this.localStorage, constants_1.STORAGE_KEY);
-        });
-    }
-    /**
-     * Clear and re-create refresh token timer
-     * @param value time intervals in milliseconds
-     */
-    _startAutoRefreshToken(value) {
-        if (this.refreshTokenTimer)
-            clearTimeout(this.refreshTokenTimer);
-        if (value <= 0 || !this.autoRefreshToken)
-            return;
-        this.refreshTokenTimer = setTimeout(() => __awaiter(this, void 0, void 0, function* () {
-            this.networkRetries++;
-            const { error } = yield this._callRefreshToken();
-            if (!error)
-                this.networkRetries = 0;
-            if ((error === null || error === void 0 ? void 0 : error.message) === constants_1.NETWORK_FAILURE.ERROR_MESSAGE &&
-                this.networkRetries < constants_1.NETWORK_FAILURE.MAX_RETRIES)
-                this._startAutoRefreshToken(Math.pow(constants_1.NETWORK_FAILURE.RETRY_INTERVAL, this.networkRetries) * 100); // exponential backoff
-        }), value);
-        if (typeof this.refreshTokenTimer.unref === 'function')
-            this.refreshTokenTimer.unref();
-    }
-    /**
-     * Listens for changes to LocalStorage and updates the current session.
-     */
-    _listenForMultiTabEvents() {
-        if (!this.multiTab || !(0, helpers_1.isBrowser)() || !(window === null || window === void 0 ? void 0 : window.addEventListener)) {
-            return false;
+    async _removeSession() {
+        this._debug('#_removeSession()');
+        if (this.persistSession) {
+            await (0, helpers_1.removeItemAsync)(this.storage, this.storageKey);
         }
+        else {
+            this.inMemorySession = null;
+        }
+    }
+    /**
+     * Removes any registered visibilitychange callback.
+     *
+     * {@see #startAutoRefresh}
+     * {@see #stopAutoRefresh}
+     */
+    _removeVisibilityChangedCallback() {
+        this._debug('#_removeVisibilityChangedCallback()');
+        const callback = this.visibilityChangedCallback;
+        this.visibilityChangedCallback = null;
         try {
-            window === null || window === void 0 ? void 0 : window.addEventListener('storage', (e) => {
-                var _a;
-                if (e.key === constants_1.STORAGE_KEY) {
-                    const newSession = JSON.parse(String(e.newValue));
-                    if ((_a = newSession === null || newSession === void 0 ? void 0 : newSession.currentSession) === null || _a === void 0 ? void 0 : _a.access_token) {
-                        this._saveSession(newSession.currentSession);
-                        this._notifyAllSubscribers('SIGNED_IN');
+            if (callback && (0, helpers_1.isBrowser)() && (window === null || window === void 0 ? void 0 : window.removeEventListener)) {
+                window.removeEventListener('visibilitychange', callback);
+            }
+        }
+        catch (e) {
+            console.error('removing visibilitychange callback failed', e);
+        }
+    }
+    /**
+     * This is the private implementation of {@link #startAutoRefresh}. Use this
+     * within the library.
+     */
+    async _startAutoRefresh() {
+        await this._stopAutoRefresh();
+        this._debug('#_startAutoRefresh()');
+        const ticker = setInterval(() => this._autoRefreshTokenTick(), AUTO_REFRESH_TICK_DURATION);
+        this.autoRefreshTicker = ticker;
+        if (ticker && typeof ticker === 'object' && typeof ticker.unref === 'function') {
+            // ticker is a NodeJS Timeout object that has an `unref` method
+            // https://nodejs.org/api/timers.html#timeoutunref
+            // When auto refresh is used in NodeJS (like for testing) the
+            // `setInterval` is preventing the process from being marked as
+            // finished and tests run endlessly. This can be prevented by calling
+            // `unref()` on the returned object.
+            ticker.unref();
+            // @ts-ignore
+        }
+        else if (typeof Deno !== 'undefined' && typeof Deno.unrefTimer === 'function') {
+            // similar like for NodeJS, but with the Deno API
+            // https://deno.land/api@latest?unstable&s=Deno.unrefTimer
+            // @ts-ignore
+            Deno.unrefTimer(ticker);
+        }
+        // run the tick immediately, but in the next pass of the event loop so that
+        // #_initialize can be allowed to complete without recursively waiting on
+        // itself
+        setTimeout(async () => {
+            await this.initializePromise;
+            await this._autoRefreshTokenTick();
+        }, 0);
+    }
+    /**
+     * This is the private implementation of {@link #stopAutoRefresh}. Use this
+     * within the library.
+     */
+    async _stopAutoRefresh() {
+        this._debug('#_stopAutoRefresh()');
+        const ticker = this.autoRefreshTicker;
+        this.autoRefreshTicker = null;
+        if (ticker) {
+            clearInterval(ticker);
+        }
+    }
+    /**
+     * Starts an auto-refresh process in the background. The session is checked
+     * every few seconds. Close to the time of expiration a process is started to
+     * refresh the session. If refreshing fails it will be retried for as long as
+     * necessary.
+     *
+     * If you set the {@link GoTrueClientOptions#autoRefreshToken} you don't need
+     * to call this function, it will be called for you.
+     *
+     * On browsers the refresh process works only when the tab/window is in the
+     * foreground to conserve resources as well as prevent race conditions and
+     * flooding auth with requests. If you call this method any managed
+     * visibility change callback will be removed and you must manage visibility
+     * changes on your own.
+     *
+     * On non-browser platforms the refresh process works *continuously* in the
+     * background, which may not be desirable. You should hook into your
+     * platform's foreground indication mechanism and call these methods
+     * appropriately to conserve resources.
+     *
+     * {@see #stopAutoRefresh}
+     */
+    async startAutoRefresh() {
+        this._removeVisibilityChangedCallback();
+        await this._startAutoRefresh();
+    }
+    /**
+     * Stops an active auto refresh process running in the background (if any).
+     *
+     * If you call this method any managed visibility change callback will be
+     * removed and you must manage visibility changes on your own.
+     *
+     * See {@link #startAutoRefresh} for more details.
+     */
+    async stopAutoRefresh() {
+        this._removeVisibilityChangedCallback();
+        await this._stopAutoRefresh();
+    }
+    /**
+     * Runs the auto refresh token tick.
+     */
+    async _autoRefreshTokenTick() {
+        this._debug('#_autoRefreshTokenTick()', 'begin');
+        try {
+            await this._acquireLock(0, async () => {
+                try {
+                    const now = Date.now();
+                    try {
+                        return await this._useSession(async (result) => {
+                            const { data: { session }, } = result;
+                            if (!session || !session.refresh_token || !session.expires_at) {
+                                this._debug('#_autoRefreshTokenTick()', 'no session');
+                                return;
+                            }
+                            // session will expire in this many ticks (or has already expired if <= 0)
+                            const expiresInTicks = Math.floor((session.expires_at * 1000 - now) / AUTO_REFRESH_TICK_DURATION);
+                            this._debug('#_autoRefreshTokenTick()', `access token expires in ${expiresInTicks} ticks, a tick lasts ${AUTO_REFRESH_TICK_DURATION}ms, refresh threshold is ${AUTO_REFRESH_TICK_THRESHOLD} ticks`);
+                            if (expiresInTicks <= AUTO_REFRESH_TICK_THRESHOLD) {
+                                await this._callRefreshToken(session.refresh_token);
+                            }
+                        });
                     }
-                    else {
-                        this._removeSession();
-                        this._notifyAllSubscribers('SIGNED_OUT');
+                    catch (e) {
+                        console.error('Auto refresh tick failed with error. This is likely a transient error.', e);
                     }
+                }
+                finally {
+                    this._debug('#_autoRefreshTokenTick()', 'end');
                 }
             });
         }
-        catch (error) {
-            console.error('_listenForMultiTabEvents', error);
+        catch (e) {
+            if (e.isAcquireTimeout) {
+                this._debug('auto refresh token tick lock not available');
+            }
+            else {
+                throw e;
+            }
         }
     }
-    _handleVisibilityChange() {
-        if (!this.multiTab || !(0, helpers_1.isBrowser)() || !(window === null || window === void 0 ? void 0 : window.addEventListener)) {
+    /**
+     * Registers callbacks on the browser / platform, which in-turn run
+     * algorithms when the browser window/tab are in foreground. On non-browser
+     * platforms it assumes always foreground.
+     */
+    async _handleVisibilityChange() {
+        this._debug('#_handleVisibilityChange()');
+        if (!(0, helpers_1.isBrowser)() || !(window === null || window === void 0 ? void 0 : window.addEventListener)) {
+            if (this.autoRefreshToken) {
+                // in non-browser environments the refresh token ticker runs always
+                this.startAutoRefresh();
+            }
             return false;
         }
         try {
-            window === null || window === void 0 ? void 0 : window.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible') {
-                    this._recoverAndRefresh();
-                }
-            });
+            this.visibilityChangedCallback = async () => await this._onVisibilityChanged(false);
+            window === null || window === void 0 ? void 0 : window.addEventListener('visibilitychange', this.visibilityChangedCallback);
+            // now immediately call the visbility changed callback to setup with the
+            // current visbility state
+            await this._onVisibilityChanged(true); // initial call
         }
         catch (error) {
             console.error('_handleVisibilityChange', error);
         }
     }
+    /**
+     * Callback registered with `window.addEventListener('visibilitychange')`.
+     */
+    async _onVisibilityChanged(isInitial) {
+        this._debug(`#_onVisibilityChanged(${isInitial})`, 'visibilityState', document.visibilityState);
+        if (document.visibilityState === 'visible') {
+            // to avoid recursively depending on #_initialize(), run the visibility
+            // changed callback in the next event loop tick
+            setTimeout(async () => {
+                if (!isInitial) {
+                    // initial visibility change setup is handled in another flow under #initialize()
+                    await this.initializePromise;
+                    await this._recoverAndRefresh();
+                    this._debug('#_onVisibilityChanged()', 'finished waiting for initialize, _recoverAndRefresh');
+                }
+                if (this.autoRefreshToken) {
+                    // in browser environments the refresh token ticker runs only on focused tabs
+                    // which prevents race conditions
+                    this._startAutoRefresh();
+                }
+            }, 0);
+        }
+        else if (document.visibilityState === 'hidden') {
+            if (this.autoRefreshToken) {
+                this._stopAutoRefresh();
+            }
+        }
+    }
+    /**
+     * Generates the relevant login URL for a third-party provider.
+     * @param options.redirectTo A URL or mobile address to send the user to after they are confirmed.
+     * @param options.scopes A space-separated list of scopes granted to the OAuth application.
+     * @param options.queryParams An object of key-value pairs containing query parameters granted to the OAuth application.
+     */
+    async _getUrlForProvider(provider, options) {
+        const urlParams = [`provider=${encodeURIComponent(provider)}`];
+        if (options === null || options === void 0 ? void 0 : options.redirectTo) {
+            urlParams.push(`redirect_to=${encodeURIComponent(options.redirectTo)}`);
+        }
+        if (options === null || options === void 0 ? void 0 : options.scopes) {
+            urlParams.push(`scopes=${encodeURIComponent(options.scopes)}`);
+        }
+        if (this.flowType === 'pkce') {
+            const codeVerifier = (0, helpers_1.generatePKCEVerifier)();
+            await (0, helpers_1.setItemAsync)(this.storage, `${this.storageKey}-code-verifier`, codeVerifier);
+            const codeChallenge = await (0, helpers_1.generatePKCEChallenge)(codeVerifier);
+            const codeChallengeMethod = codeVerifier === codeChallenge ? 'plain' : 's256';
+            this._debug('PKCE', 'code verifier', `${codeVerifier.substring(0, 5)}...`, 'code challenge', codeChallenge, 'method', codeChallengeMethod);
+            const flowParams = new URLSearchParams({
+                code_challenge: `${encodeURIComponent(codeChallenge)}`,
+                code_challenge_method: `${encodeURIComponent(codeChallengeMethod)}`,
+            });
+            urlParams.push(flowParams.toString());
+        }
+        if (options === null || options === void 0 ? void 0 : options.queryParams) {
+            const query = new URLSearchParams(options.queryParams);
+            urlParams.push(query.toString());
+        }
+        return `${this.url}/authorize?${urlParams.join('&')}`;
+    }
+    async _unenroll(params) {
+        try {
+            return await this._useSession(async (result) => {
+                var _a;
+                const { data: sessionData, error: sessionError } = result;
+                if (sessionError) {
+                    return { data: null, error: sessionError };
+                }
+                return await (0, fetch_1._request)(this.fetch, 'DELETE', `${this.url}/factors/${params.factorId}`, {
+                    headers: this.headers,
+                    jwt: (_a = sessionData === null || sessionData === void 0 ? void 0 : sessionData.session) === null || _a === void 0 ? void 0 : _a.access_token,
+                });
+            });
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: null, error };
+            }
+            throw error;
+        }
+    }
+    /**
+     * {@see GoTrueMFAApi#enroll}
+     */
+    async _enroll(params) {
+        try {
+            return await this._useSession(async (result) => {
+                var _a, _b;
+                const { data: sessionData, error: sessionError } = result;
+                if (sessionError) {
+                    return { data: null, error: sessionError };
+                }
+                const { data, error } = await (0, fetch_1._request)(this.fetch, 'POST', `${this.url}/factors`, {
+                    body: {
+                        friendly_name: params.friendlyName,
+                        factor_type: params.factorType,
+                        issuer: params.issuer,
+                    },
+                    headers: this.headers,
+                    jwt: (_a = sessionData === null || sessionData === void 0 ? void 0 : sessionData.session) === null || _a === void 0 ? void 0 : _a.access_token,
+                });
+                if (error) {
+                    return { data: null, error };
+                }
+                if ((_b = data === null || data === void 0 ? void 0 : data.totp) === null || _b === void 0 ? void 0 : _b.qr_code) {
+                    data.totp.qr_code = `data:image/svg+xml;utf-8,${data.totp.qr_code}`;
+                }
+                return { data, error: null };
+            });
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: null, error };
+            }
+            throw error;
+        }
+    }
+    /**
+     * {@see GoTrueMFAApi#verify}
+     */
+    async _verify(params) {
+        try {
+            return await this._useSession(async (result) => {
+                var _a;
+                const { data: sessionData, error: sessionError } = result;
+                if (sessionError) {
+                    return { data: null, error: sessionError };
+                }
+                const { data, error } = await (0, fetch_1._request)(this.fetch, 'POST', `${this.url}/factors/${params.factorId}/verify`, {
+                    body: { code: params.code, challenge_id: params.challengeId },
+                    headers: this.headers,
+                    jwt: (_a = sessionData === null || sessionData === void 0 ? void 0 : sessionData.session) === null || _a === void 0 ? void 0 : _a.access_token,
+                });
+                if (error) {
+                    return { data: null, error };
+                }
+                await this._saveSession(Object.assign({ expires_at: Math.round(Date.now() / 1000) + data.expires_in }, data));
+                await this._notifyAllSubscribers('MFA_CHALLENGE_VERIFIED', data);
+                return { data, error };
+            });
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: null, error };
+            }
+            throw error;
+        }
+    }
+    /**
+     * {@see GoTrueMFAApi#challenge}
+     */
+    async _challenge(params) {
+        try {
+            return await this._useSession(async (result) => {
+                var _a;
+                const { data: sessionData, error: sessionError } = result;
+                if (sessionError) {
+                    return { data: null, error: sessionError };
+                }
+                return await (0, fetch_1._request)(this.fetch, 'POST', `${this.url}/factors/${params.factorId}/challenge`, {
+                    headers: this.headers,
+                    jwt: (_a = sessionData === null || sessionData === void 0 ? void 0 : sessionData.session) === null || _a === void 0 ? void 0 : _a.access_token,
+                });
+            });
+        }
+        catch (error) {
+            if ((0, errors_1.isAuthError)(error)) {
+                return { data: null, error };
+            }
+            throw error;
+        }
+    }
+    /**
+     * {@see GoTrueMFAApi#challengeAndVerify}
+     */
+    async _challengeAndVerify(params) {
+        const { data: challengeData, error: challengeError } = await this._challenge({
+            factorId: params.factorId,
+        });
+        if (challengeError) {
+            return { data: null, error: challengeError };
+        }
+        return await this._verify({
+            factorId: params.factorId,
+            challengeId: challengeData.id,
+            code: params.code,
+        });
+    }
+    /**
+     * {@see GoTrueMFAApi#listFactors}
+     */
+    async _listFactors() {
+        const { data: { user }, error: userError, } = await this._getUser();
+        if (userError) {
+            return { data: null, error: userError };
+        }
+        const factors = (user === null || user === void 0 ? void 0 : user.factors) || [];
+        const totp = factors.filter((factor) => factor.factor_type === 'totp' && factor.status === 'verified');
+        return {
+            data: {
+                all: factors,
+                totp,
+            },
+            error: null,
+        };
+    }
+    /**
+     * {@see GoTrueMFAApi#getAuthenticatorAssuranceLevel}
+     */
+    async _getAuthenticatorAssuranceLevel() {
+        return await this._useSession(async (result) => {
+            var _a, _b;
+            const { data: { session }, error: sessionError, } = result;
+            if (sessionError) {
+                return { data: null, error: sessionError };
+            }
+            if (!session) {
+                return {
+                    data: { currentLevel: null, nextLevel: null, currentAuthenticationMethods: [] },
+                    error: null,
+                };
+            }
+            const payload = this._decodeJWT(session.access_token);
+            let currentLevel = null;
+            if (payload.aal) {
+                currentLevel = payload.aal;
+            }
+            let nextLevel = currentLevel;
+            const verifiedFactors = (_b = (_a = session.user.factors) === null || _a === void 0 ? void 0 : _a.filter((factor) => factor.status === 'verified')) !== null && _b !== void 0 ? _b : [];
+            if (verifiedFactors.length > 0) {
+                nextLevel = 'aal2';
+            }
+            const currentAuthenticationMethods = payload.amr || [];
+            return { data: { currentLevel, nextLevel, currentAuthenticationMethods }, error: null };
+        });
+    }
 }
 exports["default"] = GoTrueClient;
+GoTrueClient.nextInstanceID = 0;
 //# sourceMappingURL=GoTrueClient.js.map
 
 /***/ }),
 
-/***/ 9381:
+/***/ 7776:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -3447,284 +4242,323 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.GoTrueClient = exports.GoTrueApi = void 0;
-const GoTrueApi_1 = __importDefault(__nccwpck_require__(8101));
-exports.GoTrueApi = GoTrueApi_1.default;
-const GoTrueClient_1 = __importDefault(__nccwpck_require__(2745));
+exports.lockInternals = exports.NavigatorLockAcquireTimeoutError = exports.navigatorLock = exports.GoTrueClient = exports.GoTrueAdminApi = void 0;
+const GoTrueAdminApi_1 = __importDefault(__nccwpck_require__(6244));
+exports.GoTrueAdminApi = GoTrueAdminApi_1.default;
+const GoTrueClient_1 = __importDefault(__nccwpck_require__(5180));
 exports.GoTrueClient = GoTrueClient_1.default;
-__exportStar(__nccwpck_require__(7155), exports);
+__exportStar(__nccwpck_require__(8784), exports);
+__exportStar(__nccwpck_require__(6166), exports);
+var locks_1 = __nccwpck_require__(1420);
+Object.defineProperty(exports, "navigatorLock", ({ enumerable: true, get: function () { return locks_1.navigatorLock; } }));
+Object.defineProperty(exports, "NavigatorLockAcquireTimeoutError", ({ enumerable: true, get: function () { return locks_1.NavigatorLockAcquireTimeoutError; } }));
+Object.defineProperty(exports, "lockInternals", ({ enumerable: true, get: function () { return locks_1.internals; } }));
 //# sourceMappingURL=index.js.map
 
 /***/ }),
 
-/***/ 1052:
+/***/ 3587:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.COOKIE_OPTIONS = exports.STORAGE_KEY = exports.NETWORK_FAILURE = exports.EXPIRY_MARGIN = exports.DEFAULT_HEADERS = exports.AUDIENCE = exports.GOTRUE_URL = void 0;
-const version_1 = __nccwpck_require__(3967);
+exports.NETWORK_FAILURE = exports.EXPIRY_MARGIN = exports.DEFAULT_HEADERS = exports.AUDIENCE = exports.STORAGE_KEY = exports.GOTRUE_URL = void 0;
+const version_1 = __nccwpck_require__(6965);
 exports.GOTRUE_URL = 'http://localhost:9999';
+exports.STORAGE_KEY = 'supabase.auth.token';
 exports.AUDIENCE = '';
 exports.DEFAULT_HEADERS = { 'X-Client-Info': `gotrue-js/${version_1.version}` };
 exports.EXPIRY_MARGIN = 10; // in seconds
 exports.NETWORK_FAILURE = {
-    ERROR_MESSAGE: 'Request Failed',
     MAX_RETRIES: 10,
     RETRY_INTERVAL: 2, // in deciseconds
-};
-exports.STORAGE_KEY = 'supabase.auth.token';
-exports.COOKIE_OPTIONS = {
-    name: 'sb',
-    lifetime: 60 * 60 * 8,
-    domain: '',
-    path: '/',
-    sameSite: 'lax',
 };
 //# sourceMappingURL=constants.js.map
 
 /***/ }),
 
-/***/ 8612:
+/***/ 6166:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.deleteCookie = exports.setCookie = exports.setCookies = exports.getCookieString = void 0;
-/**
- * Serialize data into a cookie header.
- */
-function serialize(name, val, options) {
-    const opt = options || {};
-    const enc = encodeURIComponent;
-    /* eslint-disable-next-line no-control-regex */
-    const fieldContentRegExp = /^[\u0009\u0020-\u007e\u0080-\u00ff]+$/;
-    if (typeof enc !== 'function') {
-        throw new TypeError('option encode is invalid');
+exports.isAuthRetryableFetchError = exports.AuthRetryableFetchError = exports.AuthPKCEGrantCodeExchangeError = exports.AuthImplicitGrantRedirectError = exports.AuthInvalidCredentialsError = exports.AuthInvalidTokenResponseError = exports.AuthSessionMissingError = exports.CustomAuthError = exports.AuthUnknownError = exports.isAuthApiError = exports.AuthApiError = exports.isAuthError = exports.AuthError = void 0;
+class AuthError extends Error {
+    constructor(message, status) {
+        super(message);
+        this.__isAuthError = true;
+        this.name = 'AuthError';
+        this.status = status;
     }
-    if (!fieldContentRegExp.test(name)) {
-        throw new TypeError('argument name is invalid');
-    }
-    const value = enc(val);
-    if (value && !fieldContentRegExp.test(value)) {
-        throw new TypeError('argument val is invalid');
-    }
-    let str = name + '=' + value;
-    if (null != opt.maxAge) {
-        const maxAge = opt.maxAge - 0;
-        if (isNaN(maxAge) || !isFinite(maxAge)) {
-            throw new TypeError('option maxAge is invalid');
-        }
-        str += '; Max-Age=' + Math.floor(maxAge);
-    }
-    if (opt.domain) {
-        if (!fieldContentRegExp.test(opt.domain)) {
-            throw new TypeError('option domain is invalid');
-        }
-        str += '; Domain=' + opt.domain;
-    }
-    if (opt.path) {
-        if (!fieldContentRegExp.test(opt.path)) {
-            throw new TypeError('option path is invalid');
-        }
-        str += '; Path=' + opt.path;
-    }
-    if (opt.expires) {
-        if (typeof opt.expires.toUTCString !== 'function') {
-            throw new TypeError('option expires is invalid');
-        }
-        str += '; Expires=' + opt.expires.toUTCString();
-    }
-    if (opt.httpOnly) {
-        str += '; HttpOnly';
-    }
-    if (opt.secure) {
-        str += '; Secure';
-    }
-    if (opt.sameSite) {
-        const sameSite = typeof opt.sameSite === 'string' ? opt.sameSite.toLowerCase() : opt.sameSite;
-        switch (sameSite) {
-            case 'lax':
-                str += '; SameSite=Lax';
-                break;
-            case 'strict':
-                str += '; SameSite=Strict';
-                break;
-            case 'none':
-                str += '; SameSite=None';
-                break;
-            default:
-                throw new TypeError('option sameSite is invalid');
-        }
-    }
-    return str;
 }
-/**
- * Based on the environment and the request we know if a secure cookie can be set.
- */
-function isSecureEnvironment(req) {
-    if (!req || !req.headers || !req.headers.host) {
-        throw new Error('The "host" request header is not available');
+exports.AuthError = AuthError;
+function isAuthError(error) {
+    return typeof error === 'object' && error !== null && '__isAuthError' in error;
+}
+exports.isAuthError = isAuthError;
+class AuthApiError extends AuthError {
+    constructor(message, status) {
+        super(message, status);
+        this.name = 'AuthApiError';
+        this.status = status;
     }
-    const host = (req.headers.host.indexOf(':') > -1 && req.headers.host.split(':')[0]) || req.headers.host;
-    if (['localhost', '127.0.0.1'].indexOf(host) > -1 || host.endsWith('.local')) {
-        return false;
+    toJSON() {
+        return {
+            name: this.name,
+            message: this.message,
+            status: this.status,
+        };
     }
-    return true;
 }
-/**
- * Serialize a cookie to a string.
- */
-function serializeCookie(cookie, secure) {
-    var _a, _b, _c;
-    return serialize(cookie.name, cookie.value, {
-        maxAge: cookie.maxAge,
-        expires: new Date(Date.now() + cookie.maxAge * 1000),
-        httpOnly: true,
-        secure,
-        path: (_a = cookie.path) !== null && _a !== void 0 ? _a : '/',
-        domain: (_b = cookie.domain) !== null && _b !== void 0 ? _b : '',
-        sameSite: (_c = cookie.sameSite) !== null && _c !== void 0 ? _c : 'lax',
-    });
+exports.AuthApiError = AuthApiError;
+function isAuthApiError(error) {
+    return isAuthError(error) && error.name === 'AuthApiError';
 }
-/**
- * Get Cookie Header strings.
- */
-function getCookieString(req, res, cookies) {
-    const strCookies = cookies.map((c) => serializeCookie(c, isSecureEnvironment(req)));
-    const previousCookies = res.getHeader('Set-Cookie');
-    if (previousCookies) {
-        if (previousCookies instanceof Array) {
-            Array.prototype.push.apply(strCookies, previousCookies);
-        }
-        else if (typeof previousCookies === 'string') {
-            strCookies.push(previousCookies);
-        }
+exports.isAuthApiError = isAuthApiError;
+class AuthUnknownError extends AuthError {
+    constructor(message, originalError) {
+        super(message);
+        this.name = 'AuthUnknownError';
+        this.originalError = originalError;
     }
-    return strCookies;
 }
-exports.getCookieString = getCookieString;
-/**
- * Set one or more cookies.
- */
-function setCookies(req, res, cookies) {
-    res.setHeader('Set-Cookie', getCookieString(req, res, cookies));
+exports.AuthUnknownError = AuthUnknownError;
+class CustomAuthError extends AuthError {
+    constructor(message, name, status) {
+        super(message);
+        this.name = name;
+        this.status = status;
+    }
+    toJSON() {
+        return {
+            name: this.name,
+            message: this.message,
+            status: this.status,
+        };
+    }
 }
-exports.setCookies = setCookies;
-/**
- * Set one or more cookies.
- */
-function setCookie(req, res, cookie) {
-    setCookies(req, res, [cookie]);
+exports.CustomAuthError = CustomAuthError;
+class AuthSessionMissingError extends CustomAuthError {
+    constructor() {
+        super('Auth session missing!', 'AuthSessionMissingError', 400);
+    }
 }
-exports.setCookie = setCookie;
-function deleteCookie(req, res, name) {
-    setCookie(req, res, {
-        name,
-        value: '',
-        maxAge: -1,
-    });
+exports.AuthSessionMissingError = AuthSessionMissingError;
+class AuthInvalidTokenResponseError extends CustomAuthError {
+    constructor() {
+        super('Auth session or user missing', 'AuthInvalidTokenResponseError', 500);
+    }
 }
-exports.deleteCookie = deleteCookie;
-//# sourceMappingURL=cookies.js.map
+exports.AuthInvalidTokenResponseError = AuthInvalidTokenResponseError;
+class AuthInvalidCredentialsError extends CustomAuthError {
+    constructor(message) {
+        super(message, 'AuthInvalidCredentialsError', 400);
+    }
+}
+exports.AuthInvalidCredentialsError = AuthInvalidCredentialsError;
+class AuthImplicitGrantRedirectError extends CustomAuthError {
+    constructor(message, details = null) {
+        super(message, 'AuthImplicitGrantRedirectError', 500);
+        this.details = null;
+        this.details = details;
+    }
+    toJSON() {
+        return {
+            name: this.name,
+            message: this.message,
+            status: this.status,
+            details: this.details,
+        };
+    }
+}
+exports.AuthImplicitGrantRedirectError = AuthImplicitGrantRedirectError;
+class AuthPKCEGrantCodeExchangeError extends CustomAuthError {
+    constructor(message, details = null) {
+        super(message, 'AuthPKCEGrantCodeExchangeError', 500);
+        this.details = null;
+        this.details = details;
+    }
+    toJSON() {
+        return {
+            name: this.name,
+            message: this.message,
+            status: this.status,
+            details: this.details,
+        };
+    }
+}
+exports.AuthPKCEGrantCodeExchangeError = AuthPKCEGrantCodeExchangeError;
+class AuthRetryableFetchError extends CustomAuthError {
+    constructor(message, status) {
+        super(message, 'AuthRetryableFetchError', status);
+    }
+}
+exports.AuthRetryableFetchError = AuthRetryableFetchError;
+function isAuthRetryableFetchError(error) {
+    return isAuthError(error) && error.name === 'AuthRetryableFetchError';
+}
+exports.isAuthRetryableFetchError = isAuthRetryableFetchError;
+//# sourceMappingURL=errors.js.map
 
 /***/ }),
 
-/***/ 9709:
+/***/ 398:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
+var __rest = (this && this.__rest) || function (s, e) {
+    var t = {};
+    for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
+        t[p] = s[p];
+    if (s != null && typeof Object.getOwnPropertySymbols === "function")
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
+    return t;
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.remove = exports.put = exports.post = exports.get = void 0;
-const constants_1 = __nccwpck_require__(1052);
+exports._noResolveJsonResponse = exports._generateLinkResponse = exports._ssoResponse = exports._userResponse = exports._sessionResponse = exports._request = void 0;
+const helpers_1 = __nccwpck_require__(6483);
+const errors_1 = __nccwpck_require__(6166);
 const _getErrorMessage = (err) => err.msg || err.message || err.error_description || err.error || JSON.stringify(err);
-const handleError = (error, reject) => {
-    if (!(error === null || error === void 0 ? void 0 : error.status)) {
-        return reject({ message: constants_1.NETWORK_FAILURE.ERROR_MESSAGE });
+const NETWORK_ERROR_CODES = [502, 503, 504];
+async function handleError(error) {
+    if (!(0, helpers_1.looksLikeFetchResponse)(error)) {
+        throw new errors_1.AuthRetryableFetchError(_getErrorMessage(error), 0);
     }
-    if (typeof error.json !== 'function') {
-        return reject(error);
+    if (NETWORK_ERROR_CODES.includes(error.status)) {
+        // status in 500...599 range - server had an error, request might be retryed.
+        throw new errors_1.AuthRetryableFetchError(_getErrorMessage(error), error.status);
     }
-    error.json().then((err) => {
-        return reject({
-            message: _getErrorMessage(err),
-            status: (error === null || error === void 0 ? void 0 : error.status) || 500,
-        });
-    });
-};
-const _getRequestParams = (method, options, body) => {
+    let data;
+    try {
+        data = await error.json();
+    }
+    catch (e) {
+        throw new errors_1.AuthUnknownError(_getErrorMessage(e), e);
+    }
+    throw new errors_1.AuthApiError(_getErrorMessage(data), error.status || 500);
+}
+const _getRequestParams = (method, options, parameters, body) => {
     const params = { method, headers: (options === null || options === void 0 ? void 0 : options.headers) || {} };
     if (method === 'GET') {
         return params;
     }
-    params.headers = Object.assign({ 'Content-Type': 'text/plain;charset=UTF-8' }, options === null || options === void 0 ? void 0 : options.headers);
+    params.headers = Object.assign({ 'Content-Type': 'application/json;charset=UTF-8' }, options === null || options === void 0 ? void 0 : options.headers);
     params.body = JSON.stringify(body);
-    return params;
+    return Object.assign(Object.assign({}, params), parameters);
 };
-function _handleRequest(fetcher, method, url, options, body) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return new Promise((resolve, reject) => {
-            fetcher(url, _getRequestParams(method, options, body))
-                .then((result) => {
-                if (!result.ok)
-                    throw result;
-                if (options === null || options === void 0 ? void 0 : options.noResolveJson)
-                    return resolve;
-                return result.json();
-            })
-                .then((data) => resolve(data))
-                .catch((error) => handleError(error, reject));
-        });
-    });
+async function _request(fetcher, method, url, options) {
+    var _a;
+    const headers = Object.assign({}, options === null || options === void 0 ? void 0 : options.headers);
+    if (options === null || options === void 0 ? void 0 : options.jwt) {
+        headers['Authorization'] = `Bearer ${options.jwt}`;
+    }
+    const qs = (_a = options === null || options === void 0 ? void 0 : options.query) !== null && _a !== void 0 ? _a : {};
+    if (options === null || options === void 0 ? void 0 : options.redirectTo) {
+        qs['redirect_to'] = options.redirectTo;
+    }
+    const queryString = Object.keys(qs).length ? '?' + new URLSearchParams(qs).toString() : '';
+    const data = await _handleRequest(fetcher, method, url + queryString, { headers, noResolveJson: options === null || options === void 0 ? void 0 : options.noResolveJson }, {}, options === null || options === void 0 ? void 0 : options.body);
+    return (options === null || options === void 0 ? void 0 : options.xform) ? options === null || options === void 0 ? void 0 : options.xform(data) : { data: Object.assign({}, data), error: null };
 }
-function get(fetcher, url, options) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return _handleRequest(fetcher, 'GET', url, options);
-    });
+exports._request = _request;
+async function _handleRequest(fetcher, method, url, options, parameters, body) {
+    const requestParams = _getRequestParams(method, options, parameters, body);
+    let result;
+    try {
+        result = await fetcher(url, requestParams);
+    }
+    catch (e) {
+        console.error(e);
+        // fetch failed, likely due to a network or CORS error
+        throw new errors_1.AuthRetryableFetchError(_getErrorMessage(e), 0);
+    }
+    if (!result.ok) {
+        await handleError(result);
+    }
+    if (options === null || options === void 0 ? void 0 : options.noResolveJson) {
+        return result;
+    }
+    try {
+        return await result.json();
+    }
+    catch (e) {
+        await handleError(e);
+    }
 }
-exports.get = get;
-function post(fetcher, url, body, options) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return _handleRequest(fetcher, 'POST', url, options, body);
-    });
+function _sessionResponse(data) {
+    var _a;
+    let session = null;
+    if (hasSession(data)) {
+        session = Object.assign({}, data);
+        session.expires_at = (0, helpers_1.expiresAt)(data.expires_in);
+    }
+    const user = (_a = data.user) !== null && _a !== void 0 ? _a : data;
+    return { data: { session, user }, error: null };
 }
-exports.post = post;
-function put(fetcher, url, body, options) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return _handleRequest(fetcher, 'PUT', url, options, body);
-    });
+exports._sessionResponse = _sessionResponse;
+function _userResponse(data) {
+    var _a;
+    const user = (_a = data.user) !== null && _a !== void 0 ? _a : data;
+    return { data: { user }, error: null };
 }
-exports.put = put;
-function remove(fetcher, url, body, options) {
-    return __awaiter(this, void 0, void 0, function* () {
-        return _handleRequest(fetcher, 'DELETE', url, options, body);
-    });
+exports._userResponse = _userResponse;
+function _ssoResponse(data) {
+    return { data, error: null };
 }
-exports.remove = remove;
+exports._ssoResponse = _ssoResponse;
+function _generateLinkResponse(data) {
+    const { action_link, email_otp, hashed_token, redirect_to, verification_type } = data, rest = __rest(data, ["action_link", "email_otp", "hashed_token", "redirect_to", "verification_type"]);
+    const properties = {
+        action_link,
+        email_otp,
+        hashed_token,
+        redirect_to,
+        verification_type,
+    };
+    const user = Object.assign({}, rest);
+    return {
+        data: {
+            properties,
+            user,
+        },
+        error: null,
+    };
+}
+exports._generateLinkResponse = _generateLinkResponse;
+function _noResolveJsonResponse(data) {
+    return data;
+}
+exports._noResolveJsonResponse = _noResolveJsonResponse;
+/**
+ * hasSession checks if the response object contains a valid session
+ * @param data A response object
+ * @returns true if a session is in the response
+ */
+function hasSession(data) {
+    return data.access_token && data.refresh_token && data.expires_in;
+}
 //# sourceMappingURL=fetch.js.map
 
 /***/ }),
 
-/***/ 97:
+/***/ 6483:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -3741,17 +4575,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.removeItemAsync = exports.getItemSynchronously = exports.getItemAsync = exports.setItemAsync = exports.resolveFetch = exports.getParameterByName = exports.isBrowser = exports.uuid = exports.expiresAt = void 0;
+exports.generatePKCEChallenge = exports.generatePKCEVerifier = exports.retryable = exports.sleep = exports.decodeJWTPayload = exports.Deferred = exports.decodeBase64URL = exports.removeItemAsync = exports.getItemAsync = exports.setItemAsync = exports.looksLikeFetchResponse = exports.resolveFetch = exports.parseParametersFromURL = exports.supportsLocalStorage = exports.isBrowser = exports.uuid = exports.expiresAt = void 0;
 function expiresAt(expiresIn) {
     const timeNow = Math.round(Date.now() / 1000);
     return timeNow + expiresIn;
@@ -3764,29 +4589,78 @@ function uuid() {
     });
 }
 exports.uuid = uuid;
-const isBrowser = () => typeof window !== 'undefined';
+const isBrowser = () => typeof document !== 'undefined';
 exports.isBrowser = isBrowser;
-function getParameterByName(name, url) {
-    var _a;
-    if (!url)
-        url = ((_a = window === null || window === void 0 ? void 0 : window.location) === null || _a === void 0 ? void 0 : _a.href) || '';
-    // eslint-disable-next-line no-useless-escape
-    name = name.replace(/[\[\]]/g, '\\$&');
-    const regex = new RegExp('[?&#]' + name + '(=([^&#]*)|&|#|$)'), results = regex.exec(url);
-    if (!results)
-        return null;
-    if (!results[2])
-        return '';
-    return decodeURIComponent(results[2].replace(/\+/g, ' '));
+const localStorageWriteTests = {
+    tested: false,
+    writable: false,
+};
+/**
+ * Checks whether localStorage is supported on this browser.
+ */
+const supportsLocalStorage = () => {
+    if (!(0, exports.isBrowser)()) {
+        return false;
+    }
+    try {
+        if (typeof globalThis.localStorage !== 'object') {
+            return false;
+        }
+    }
+    catch (e) {
+        // DOM exception when accessing `localStorage`
+        return false;
+    }
+    if (localStorageWriteTests.tested) {
+        return localStorageWriteTests.writable;
+    }
+    const randomKey = `lswt-${Math.random()}${Math.random()}`;
+    try {
+        globalThis.localStorage.setItem(randomKey, randomKey);
+        globalThis.localStorage.removeItem(randomKey);
+        localStorageWriteTests.tested = true;
+        localStorageWriteTests.writable = true;
+    }
+    catch (e) {
+        // localStorage can't be written to
+        // https://www.chromium.org/for-testers/bug-reporting-guidelines/uncaught-securityerror-failed-to-read-the-localstorage-property-from-window-access-is-denied-for-this-document
+        localStorageWriteTests.tested = true;
+        localStorageWriteTests.writable = false;
+    }
+    return localStorageWriteTests.writable;
+};
+exports.supportsLocalStorage = supportsLocalStorage;
+/**
+ * Extracts parameters encoded in the URL both in the query and fragment.
+ */
+function parseParametersFromURL(href) {
+    const result = {};
+    const url = new URL(href);
+    if (url.hash && url.hash[0] === '#') {
+        try {
+            const hashSearchParams = new URLSearchParams(url.hash.substring(1));
+            hashSearchParams.forEach((value, key) => {
+                result[key] = value;
+            });
+        }
+        catch (e) {
+            // hash is not a query string
+        }
+    }
+    // search parameters take precedence over hash parameters
+    url.searchParams.forEach((value, key) => {
+        result[key] = value;
+    });
+    return result;
 }
-exports.getParameterByName = getParameterByName;
+exports.parseParametersFromURL = parseParametersFromURL;
 const resolveFetch = (customFetch) => {
     let _fetch;
     if (customFetch) {
         _fetch = customFetch;
     }
     else if (typeof fetch === 'undefined') {
-        _fetch = (...args) => __awaiter(void 0, void 0, void 0, function* () { return yield (yield Promise.resolve().then(() => __importStar(__nccwpck_require__(8624)))).fetch(...args); });
+        _fetch = async (...args) => await (await Promise.resolve().then(() => __importStar(__nccwpck_require__(1489)))).fetch(...args);
     }
     else {
         _fetch = fetch;
@@ -3794,26 +4668,23 @@ const resolveFetch = (customFetch) => {
     return (...args) => _fetch(...args);
 };
 exports.resolveFetch = resolveFetch;
-// LocalStorage helpers
-const setItemAsync = (storage, key, data) => __awaiter(void 0, void 0, void 0, function* () {
-    (0, exports.isBrowser)() && (yield (storage === null || storage === void 0 ? void 0 : storage.setItem(key, JSON.stringify(data))));
-});
+const looksLikeFetchResponse = (maybeResponse) => {
+    return (typeof maybeResponse === 'object' &&
+        maybeResponse !== null &&
+        'status' in maybeResponse &&
+        'ok' in maybeResponse &&
+        'json' in maybeResponse &&
+        typeof maybeResponse.json === 'function');
+};
+exports.looksLikeFetchResponse = looksLikeFetchResponse;
+// Storage helpers
+const setItemAsync = async (storage, key, data) => {
+    await storage.setItem(key, JSON.stringify(data));
+};
 exports.setItemAsync = setItemAsync;
-const getItemAsync = (storage, key) => __awaiter(void 0, void 0, void 0, function* () {
-    const value = (0, exports.isBrowser)() && (yield (storage === null || storage === void 0 ? void 0 : storage.getItem(key)));
-    if (!value)
-        return null;
-    try {
-        return JSON.parse(value);
-    }
-    catch (_a) {
-        return value;
-    }
-});
-exports.getItemAsync = getItemAsync;
-const getItemSynchronously = (storage, key) => {
-    const value = (0, exports.isBrowser)() && (storage === null || storage === void 0 ? void 0 : storage.getItem(key));
-    if (!value || typeof value !== 'string') {
+const getItemAsync = async (storage, key) => {
+    const value = await storage.getItem(key);
+    if (!value) {
         return null;
     }
     try {
@@ -3823,16 +4694,290 @@ const getItemSynchronously = (storage, key) => {
         return value;
     }
 };
-exports.getItemSynchronously = getItemSynchronously;
-const removeItemAsync = (storage, key) => __awaiter(void 0, void 0, void 0, function* () {
-    (0, exports.isBrowser)() && (yield (storage === null || storage === void 0 ? void 0 : storage.removeItem(key)));
-});
+exports.getItemAsync = getItemAsync;
+const removeItemAsync = async (storage, key) => {
+    await storage.removeItem(key);
+};
 exports.removeItemAsync = removeItemAsync;
+function decodeBase64URL(value) {
+    const key = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+    let base64 = '';
+    let chr1, chr2, chr3;
+    let enc1, enc2, enc3, enc4;
+    let i = 0;
+    value = value.replace('-', '+').replace('_', '/');
+    while (i < value.length) {
+        enc1 = key.indexOf(value.charAt(i++));
+        enc2 = key.indexOf(value.charAt(i++));
+        enc3 = key.indexOf(value.charAt(i++));
+        enc4 = key.indexOf(value.charAt(i++));
+        chr1 = (enc1 << 2) | (enc2 >> 4);
+        chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+        chr3 = ((enc3 & 3) << 6) | enc4;
+        base64 = base64 + String.fromCharCode(chr1);
+        if (enc3 != 64 && chr2 != 0) {
+            base64 = base64 + String.fromCharCode(chr2);
+        }
+        if (enc4 != 64 && chr3 != 0) {
+            base64 = base64 + String.fromCharCode(chr3);
+        }
+    }
+    return base64;
+}
+exports.decodeBase64URL = decodeBase64URL;
+/**
+ * A deferred represents some asynchronous work that is not yet finished, which
+ * may or may not culminate in a value.
+ * Taken from: https://github.com/mike-north/types/blob/master/src/async.ts
+ */
+class Deferred {
+    constructor() {
+        // eslint-disable-next-line @typescript-eslint/no-extra-semi
+        ;
+        this.promise = new Deferred.promiseConstructor((res, rej) => {
+            // eslint-disable-next-line @typescript-eslint/no-extra-semi
+            ;
+            this.resolve = res;
+            this.reject = rej;
+        });
+    }
+}
+exports.Deferred = Deferred;
+Deferred.promiseConstructor = Promise;
+// Taken from: https://stackoverflow.com/questions/38552003/how-to-decode-jwt-token-in-javascript-without-using-a-library
+function decodeJWTPayload(token) {
+    // Regex checks for base64url format
+    const base64UrlRegex = /^([a-z0-9_-]{4})*($|[a-z0-9_-]{3}=?$|[a-z0-9_-]{2}(==)?$)$/i;
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+        throw new Error('JWT is not valid: not a JWT structure');
+    }
+    if (!base64UrlRegex.test(parts[1])) {
+        throw new Error('JWT is not valid: payload is not in base64url format');
+    }
+    const base64Url = parts[1];
+    return JSON.parse(decodeBase64URL(base64Url));
+}
+exports.decodeJWTPayload = decodeJWTPayload;
+/**
+ * Creates a promise that resolves to null after some time.
+ */
+async function sleep(time) {
+    return await new Promise((accept) => {
+        setTimeout(() => accept(null), time);
+    });
+}
+exports.sleep = sleep;
+/**
+ * Converts the provided async function into a retryable function. Each result
+ * or thrown error is sent to the isRetryable function which should return true
+ * if the function should run again.
+ */
+function retryable(fn, isRetryable) {
+    const promise = new Promise((accept, reject) => {
+        // eslint-disable-next-line @typescript-eslint/no-extra-semi
+        ;
+        (async () => {
+            for (let attempt = 0; attempt < Infinity; attempt++) {
+                try {
+                    const result = await fn(attempt);
+                    if (!isRetryable(attempt, null, result)) {
+                        accept(result);
+                        return;
+                    }
+                }
+                catch (e) {
+                    if (!isRetryable(attempt, e)) {
+                        reject(e);
+                        return;
+                    }
+                }
+            }
+        })();
+    });
+    return promise;
+}
+exports.retryable = retryable;
+function dec2hex(dec) {
+    return ('0' + dec.toString(16)).substr(-2);
+}
+// Functions below taken from: https://stackoverflow.com/questions/63309409/creating-a-code-verifier-and-challenge-for-pkce-auth-on-spotify-api-in-reactjs
+function generatePKCEVerifier() {
+    const verifierLength = 56;
+    const array = new Uint32Array(verifierLength);
+    if (typeof crypto === 'undefined') {
+        const charSet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+        const charSetLen = charSet.length;
+        let verifier = '';
+        for (let i = 0; i < verifierLength; i++) {
+            verifier += charSet.charAt(Math.floor(Math.random() * charSetLen));
+        }
+        return verifier;
+    }
+    crypto.getRandomValues(array);
+    return Array.from(array, dec2hex).join('');
+}
+exports.generatePKCEVerifier = generatePKCEVerifier;
+async function sha256(randomString) {
+    const encoder = new TextEncoder();
+    const encodedData = encoder.encode(randomString);
+    const hash = await crypto.subtle.digest('SHA-256', encodedData);
+    const bytes = new Uint8Array(hash);
+    return Array.from(bytes)
+        .map((c) => String.fromCharCode(c))
+        .join('');
+}
+function base64urlencode(str) {
+    return btoa(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+async function generatePKCEChallenge(verifier) {
+    if (typeof crypto === 'undefined') {
+        console.warn('WebCrypto API is not supported. Code challenge method will default to use plain instead of sha256.');
+        return verifier;
+    }
+    const hashed = await sha256(verifier);
+    return base64urlencode(hashed);
+}
+exports.generatePKCEChallenge = generatePKCEChallenge;
 //# sourceMappingURL=helpers.js.map
 
 /***/ }),
 
-/***/ 8818:
+/***/ 800:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const helpers_1 = __nccwpck_require__(6483);
+const localStorageAdapter = {
+    getItem: (key) => {
+        if (!(0, helpers_1.supportsLocalStorage)()) {
+            return null;
+        }
+        return globalThis.localStorage.getItem(key);
+    },
+    setItem: (key, value) => {
+        if (!(0, helpers_1.supportsLocalStorage)()) {
+            return;
+        }
+        globalThis.localStorage.setItem(key, value);
+    },
+    removeItem: (key) => {
+        if (!(0, helpers_1.supportsLocalStorage)()) {
+            return;
+        }
+        globalThis.localStorage.removeItem(key);
+    },
+};
+exports["default"] = localStorageAdapter;
+//# sourceMappingURL=local-storage.js.map
+
+/***/ }),
+
+/***/ 1420:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.navigatorLock = exports.NavigatorLockAcquireTimeoutError = exports.internals = void 0;
+const helpers_1 = __nccwpck_require__(6483);
+/**
+ * @experimental
+ */
+exports.internals = {
+    /**
+     * @experimental
+     */
+    debug: !!(globalThis &&
+        (0, helpers_1.supportsLocalStorage)() &&
+        globalThis.localStorage &&
+        globalThis.localStorage.getItem('supabase.gotrue-js.locks.debug') === 'true'),
+};
+class NavigatorLockAcquireTimeoutError extends Error {
+    constructor(message) {
+        super(message);
+        this.isAcquireTimeout = true;
+    }
+}
+exports.NavigatorLockAcquireTimeoutError = NavigatorLockAcquireTimeoutError;
+/**
+ * Implements a global exclusive lock using the Navigator LockManager API. It
+ * is available on all browsers released after 2022-03-15 with Safari being the
+ * last one to release support. If the API is not available, this function will
+ * throw. Make sure you check availablility before configuring {@link
+ * GoTrueClient}.
+ *
+ * You can turn on debugging by setting the `supabase.gotrue-js.locks.debug`
+ * local storage item to `true`.
+ *
+ * Internals:
+ *
+ * Since the LockManager API does not preserve stack traces for the async
+ * function passed in the `request` method, a trick is used where acquiring the
+ * lock releases a previously started promise to run the operation in the `fn`
+ * function. The lock waits for that promise to finish (with or without error),
+ * while the function will finally wait for the result anyway.
+ *
+ * @experimental
+ *
+ * @param name Name of the lock to be acquired.
+ * @param acquireTimeout If negative, no timeout. If 0 an error is thrown if
+ *                       the lock can't be acquired without waiting. If positive, the lock acquire
+ *                       will time out after so many milliseconds. An error is
+ *                       a timeout if it has `isAcquireTimeout` set to true.
+ * @param fn The operation to run once the lock is acquired.
+ */
+async function navigatorLock(name, acquireTimeout, fn) {
+    if (exports.internals.debug) {
+        console.log('@supabase/gotrue-js: navigatorLock: acquire lock', name, acquireTimeout);
+    }
+    const abortController = new globalThis.AbortController();
+    if (acquireTimeout > 0) {
+        setTimeout(() => {
+            abortController.abort();
+            if (exports.internals.debug) {
+                console.log('@supabase/gotrue-js: navigatorLock acquire timed out', name);
+            }
+        }, acquireTimeout);
+    }
+    return await globalThis.navigator.locks.request(name, acquireTimeout === 0
+        ? {
+            mode: 'exclusive',
+            ifAvailable: true,
+        }
+        : {
+            mode: 'exclusive',
+            signal: abortController.signal,
+        }, async (lock) => {
+        if (lock) {
+            if (exports.internals.debug) {
+                console.log('@supabase/gotrue-js: navigatorLock: acquired', name);
+            }
+            try {
+                return await fn();
+            }
+            finally {
+                if (exports.internals.debug) {
+                    console.log('@supabase/gotrue-js: navigatorLock: released', name);
+                }
+            }
+        }
+        else {
+            if (exports.internals.debug) {
+                console.log('@supabase/gotrue-js: navigatorLock: not immediately available', name);
+            }
+            throw new NavigatorLockAcquireTimeoutError(`Acquiring an exclusive Navigator LockManager lock "${name}" immediately failed`);
+        }
+    });
+}
+exports.navigatorLock = navigatorLock;
+//# sourceMappingURL=locks.js.map
+
+/***/ }),
+
+/***/ 550:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -3869,7 +5014,7 @@ exports.polyfillGlobalThis = polyfillGlobalThis;
 
 /***/ }),
 
-/***/ 7155:
+/***/ 8784:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -3879,20 +5024,20 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 
 /***/ }),
 
-/***/ 3967:
+/***/ 6965:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.version = void 0;
-// generated by genversion
-exports.version = '1.22.22';
+// Generated by genversion.
+exports.version = '2.47.0';
 //# sourceMappingURL=version.js.map
 
 /***/ }),
 
-/***/ 4412:
+/***/ 2097:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -3901,63 +5046,294 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const PostgrestQueryBuilder_1 = __importDefault(__nccwpck_require__(6581));
-const PostgrestRpcBuilder_1 = __importDefault(__nccwpck_require__(6324));
-const constants_1 = __nccwpck_require__(5510);
+const cross_fetch_1 = __importDefault(__nccwpck_require__(1489));
+class PostgrestBuilder {
+    constructor(builder) {
+        this.shouldThrowOnError = false;
+        this.method = builder.method;
+        this.url = builder.url;
+        this.headers = builder.headers;
+        this.schema = builder.schema;
+        this.body = builder.body;
+        this.shouldThrowOnError = builder.shouldThrowOnError;
+        this.signal = builder.signal;
+        this.isMaybeSingle = builder.isMaybeSingle;
+        if (builder.fetch) {
+            this.fetch = builder.fetch;
+        }
+        else if (typeof fetch === 'undefined') {
+            this.fetch = cross_fetch_1.default;
+        }
+        else {
+            this.fetch = fetch;
+        }
+    }
+    /**
+     * If there's an error with the query, throwOnError will reject the promise by
+     * throwing the error instead of returning it as part of a successful response.
+     *
+     * {@link https://github.com/supabase/supabase-js/issues/92}
+     */
+    throwOnError() {
+        this.shouldThrowOnError = true;
+        return this;
+    }
+    then(onfulfilled, onrejected) {
+        // https://postgrest.org/en/stable/api.html#switching-schemas
+        if (this.schema === undefined) {
+            // skip
+        }
+        else if (['GET', 'HEAD'].includes(this.method)) {
+            this.headers['Accept-Profile'] = this.schema;
+        }
+        else {
+            this.headers['Content-Profile'] = this.schema;
+        }
+        if (this.method !== 'GET' && this.method !== 'HEAD') {
+            this.headers['Content-Type'] = 'application/json';
+        }
+        // NOTE: Invoke w/o `this` to avoid illegal invocation error.
+        // https://github.com/supabase/postgrest-js/pull/247
+        const _fetch = this.fetch;
+        let res = _fetch(this.url.toString(), {
+            method: this.method,
+            headers: this.headers,
+            body: JSON.stringify(this.body),
+            signal: this.signal,
+        }).then(async (res) => {
+            var _a, _b, _c;
+            let error = null;
+            let data = null;
+            let count = null;
+            let status = res.status;
+            let statusText = res.statusText;
+            if (res.ok) {
+                if (this.method !== 'HEAD') {
+                    const body = await res.text();
+                    if (body === '') {
+                        // Prefer: return=minimal
+                    }
+                    else if (this.headers['Accept'] === 'text/csv') {
+                        data = body;
+                    }
+                    else if (this.headers['Accept'] &&
+                        this.headers['Accept'].includes('application/vnd.pgrst.plan+text')) {
+                        data = body;
+                    }
+                    else {
+                        data = JSON.parse(body);
+                    }
+                }
+                const countHeader = (_a = this.headers['Prefer']) === null || _a === void 0 ? void 0 : _a.match(/count=(exact|planned|estimated)/);
+                const contentRange = (_b = res.headers.get('content-range')) === null || _b === void 0 ? void 0 : _b.split('/');
+                if (countHeader && contentRange && contentRange.length > 1) {
+                    count = parseInt(contentRange[1]);
+                }
+                // Temporary partial fix for https://github.com/supabase/postgrest-js/issues/361
+                // Issue persists e.g. for `.insert([...]).select().maybeSingle()`
+                if (this.isMaybeSingle && this.method === 'GET' && Array.isArray(data)) {
+                    if (data.length > 1) {
+                        error = {
+                            // https://github.com/PostgREST/postgrest/blob/a867d79c42419af16c18c3fb019eba8df992626f/src/PostgREST/Error.hs#L553
+                            code: 'PGRST116',
+                            details: `Results contain ${data.length} rows, application/vnd.pgrst.object+json requires 1 row`,
+                            hint: null,
+                            message: 'JSON object requested, multiple (or no) rows returned',
+                        };
+                        data = null;
+                        count = null;
+                        status = 406;
+                        statusText = 'Not Acceptable';
+                    }
+                    else if (data.length === 1) {
+                        data = data[0];
+                    }
+                    else {
+                        data = null;
+                    }
+                }
+            }
+            else {
+                const body = await res.text();
+                try {
+                    error = JSON.parse(body);
+                    // Workaround for https://github.com/supabase/postgrest-js/issues/295
+                    if (Array.isArray(error) && res.status === 404) {
+                        data = [];
+                        error = null;
+                        status = 200;
+                        statusText = 'OK';
+                    }
+                }
+                catch (_d) {
+                    // Workaround for https://github.com/supabase/postgrest-js/issues/295
+                    if (res.status === 404 && body === '') {
+                        status = 204;
+                        statusText = 'No Content';
+                    }
+                    else {
+                        error = {
+                            message: body,
+                        };
+                    }
+                }
+                if (error && this.isMaybeSingle && ((_c = error === null || error === void 0 ? void 0 : error.details) === null || _c === void 0 ? void 0 : _c.includes('Results contain 0 rows'))) {
+                    error = null;
+                    status = 200;
+                    statusText = 'OK';
+                }
+                if (error && this.shouldThrowOnError) {
+                    throw error;
+                }
+            }
+            const postgrestResponse = {
+                error,
+                data,
+                count,
+                status,
+                statusText,
+            };
+            return postgrestResponse;
+        });
+        if (!this.shouldThrowOnError) {
+            res = res.catch((fetchError) => {
+                var _a, _b, _c;
+                return ({
+                    error: {
+                        message: `${(_a = fetchError === null || fetchError === void 0 ? void 0 : fetchError.name) !== null && _a !== void 0 ? _a : 'FetchError'}: ${fetchError === null || fetchError === void 0 ? void 0 : fetchError.message}`,
+                        details: `${(_b = fetchError === null || fetchError === void 0 ? void 0 : fetchError.stack) !== null && _b !== void 0 ? _b : ''}`,
+                        hint: '',
+                        code: `${(_c = fetchError === null || fetchError === void 0 ? void 0 : fetchError.code) !== null && _c !== void 0 ? _c : ''}`,
+                    },
+                    data: null,
+                    count: null,
+                    status: 0,
+                    statusText: '',
+                });
+            });
+        }
+        return res.then(onfulfilled, onrejected);
+    }
+}
+exports["default"] = PostgrestBuilder;
+//# sourceMappingURL=PostgrestBuilder.js.map
+
+/***/ }),
+
+/***/ 3878:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const PostgrestQueryBuilder_1 = __importDefault(__nccwpck_require__(9473));
+const PostgrestFilterBuilder_1 = __importDefault(__nccwpck_require__(8095));
+const constants_1 = __nccwpck_require__(1592);
+/**
+ * PostgREST client.
+ *
+ * @typeParam Database - Types for the schema from the [type
+ * generator](https://supabase.com/docs/reference/javascript/next/typescript-support)
+ *
+ * @typeParam SchemaName - Postgres schema to switch to. Must be a string
+ * literal, the same one passed to the constructor. If the schema is not
+ * `"public"`, this must be supplied manually.
+ */
 class PostgrestClient {
+    // TODO: Add back shouldThrowOnError once we figure out the typings
     /**
      * Creates a PostgREST client.
      *
-     * @param url  URL of the PostgREST endpoint.
-     * @param headers  Custom headers.
-     * @param schema  Postgres schema to switch to.
+     * @param url - URL of the PostgREST endpoint
+     * @param options - Named parameters
+     * @param options.headers - Custom headers
+     * @param options.schema - Postgres schema to switch to
+     * @param options.fetch - Custom fetch
      */
-    constructor(url, { headers = {}, schema, fetch, throwOnError, } = {}) {
+    constructor(url, { headers = {}, schema, fetch, } = {}) {
         this.url = url;
         this.headers = Object.assign(Object.assign({}, constants_1.DEFAULT_HEADERS), headers);
-        this.schema = schema;
+        this.schemaName = schema;
         this.fetch = fetch;
-        this.shouldThrowOnError = throwOnError;
     }
     /**
-     * Authenticates the request with JWT.
+     * Perform a query on a table or a view.
      *
-     * @param token  The JWT token to use.
+     * @param relation - The table or view name to query
      */
-    auth(token) {
-        this.headers['Authorization'] = `Bearer ${token}`;
-        return this;
-    }
-    /**
-     * Perform a table operation.
-     *
-     * @param table  The table name to operate on.
-     */
-    from(table) {
-        const url = `${this.url}/${table}`;
+    from(relation) {
+        const url = new URL(`${this.url}/${relation}`);
         return new PostgrestQueryBuilder_1.default(url, {
-            headers: this.headers,
-            schema: this.schema,
+            headers: Object.assign({}, this.headers),
+            schema: this.schemaName,
             fetch: this.fetch,
-            shouldThrowOnError: this.shouldThrowOnError,
+        });
+    }
+    /**
+     * Select a schema to query or perform an function (rpc) call.
+     *
+     * The schema needs to be on the list of exposed schemas inside Supabase.
+     *
+     * @param schema - The schema to query
+     */
+    schema(schema) {
+        return new PostgrestClient(this.url, {
+            headers: this.headers,
+            schema,
+            fetch: this.fetch,
         });
     }
     /**
      * Perform a function call.
      *
-     * @param fn  The function name to call.
-     * @param params  The parameters to pass to the function call.
-     * @param head  When set to true, no data will be returned.
-     * @param count  Count algorithm to use to count rows in a table.
+     * @param fn - The function name to call
+     * @param args - The arguments to pass to the function call
+     * @param options - Named parameters
+     * @param options.head - When set to `true`, `data` will not be returned.
+     * Useful if you only need the count.
+     * @param options.count - Count algorithm to use to count rows returned by the
+     * function. Only applicable for [set-returning
+     * functions](https://www.postgresql.org/docs/current/functions-srf.html).
+     *
+     * `"exact"`: Exact but slow count algorithm. Performs a `COUNT(*)` under the
+     * hood.
+     *
+     * `"planned"`: Approximated but fast count algorithm. Uses the Postgres
+     * statistics under the hood.
+     *
+     * `"estimated"`: Uses exact count for low numbers and planned count for high
+     * numbers.
      */
-    rpc(fn, params, { head = false, count = null, } = {}) {
-        const url = `${this.url}/rpc/${fn}`;
-        return new PostgrestRpcBuilder_1.default(url, {
-            headers: this.headers,
-            schema: this.schema,
+    rpc(fn, args = {}, { head = false, count, } = {}) {
+        let method;
+        const url = new URL(`${this.url}/rpc/${fn}`);
+        let body;
+        if (head) {
+            method = 'HEAD';
+            Object.entries(args).forEach(([name, value]) => {
+                url.searchParams.append(name, `${value}`);
+            });
+        }
+        else {
+            method = 'POST';
+            body = args;
+        }
+        const headers = Object.assign({}, this.headers);
+        if (count) {
+            headers['Prefer'] = `count=${count}`;
+        }
+        return new PostgrestFilterBuilder_1.default({
+            method,
+            url,
+            headers,
+            schema: this.schemaName,
+            body,
             fetch: this.fetch,
-            shouldThrowOnError: this.shouldThrowOnError,
-        }).rpc(params, { head, count });
+            allowEmpty: false,
+        });
     }
 }
 exports["default"] = PostgrestClient;
@@ -3965,7 +5341,7 @@ exports["default"] = PostgrestClient;
 
 /***/ }),
 
-/***/ 3956:
+/***/ 8095:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -3974,176 +5350,151 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.PostgrestFilterBuilder = exports.PostgrestQueryBuilder = exports.PostgrestBuilder = exports.PostgrestClient = void 0;
-const PostgrestClient_1 = __importDefault(__nccwpck_require__(4412));
-exports.PostgrestClient = PostgrestClient_1.default;
-const PostgrestFilterBuilder_1 = __importDefault(__nccwpck_require__(7661));
-exports.PostgrestFilterBuilder = PostgrestFilterBuilder_1.default;
-const PostgrestQueryBuilder_1 = __importDefault(__nccwpck_require__(6581));
-exports.PostgrestQueryBuilder = PostgrestQueryBuilder_1.default;
-const types_1 = __nccwpck_require__(8259);
-Object.defineProperty(exports, "PostgrestBuilder", ({ enumerable: true, get: function () { return types_1.PostgrestBuilder; } }));
-//# sourceMappingURL=index.js.map
-
-/***/ }),
-
-/***/ 7661:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const PostgrestTransformBuilder_1 = __importDefault(__nccwpck_require__(364));
+const PostgrestTransformBuilder_1 = __importDefault(__nccwpck_require__(3693));
 class PostgrestFilterBuilder extends PostgrestTransformBuilder_1.default {
-    constructor() {
-        super(...arguments);
-        /** @deprecated Use `contains()` instead. */
-        this.cs = this.contains;
-        /** @deprecated Use `containedBy()` instead. */
-        this.cd = this.containedBy;
-        /** @deprecated Use `rangeLt()` instead. */
-        this.sl = this.rangeLt;
-        /** @deprecated Use `rangeGt()` instead. */
-        this.sr = this.rangeGt;
-        /** @deprecated Use `rangeGte()` instead. */
-        this.nxl = this.rangeGte;
-        /** @deprecated Use `rangeLte()` instead. */
-        this.nxr = this.rangeLte;
-        /** @deprecated Use `rangeAdjacent()` instead. */
-        this.adj = this.rangeAdjacent;
-        /** @deprecated Use `overlaps()` instead. */
-        this.ov = this.overlaps;
-    }
     /**
-     * Finds all rows which doesn't satisfy the filter.
+     * Match only rows where `column` is equal to `value`.
      *
-     * @param column  The column to filter on.
-     * @param operator  The operator to filter with.
-     * @param value  The value to filter with.
-     */
-    not(column, operator, value) {
-        this.url.searchParams.append(`${column}`, `not.${operator}.${value}`);
-        return this;
-    }
-    /**
-     * Finds all rows satisfying at least one of the filters.
+     * To check if the value of `column` is NULL, you should use `.is()` instead.
      *
-     * @param filters  The filters to use, separated by commas.
-     * @param foreignTable  The foreign table to use (if `column` is a foreign column).
-     */
-    or(filters, { foreignTable } = {}) {
-        const key = typeof foreignTable === 'undefined' ? 'or' : `${foreignTable}.or`;
-        this.url.searchParams.append(key, `(${filters})`);
-        return this;
-    }
-    /**
-     * Finds all rows whose value on the stated `column` exactly matches the
-     * specified `value`.
-     *
-     * @param column  The column to filter on.
-     * @param value  The value to filter with.
+     * @param column - The column to filter on
+     * @param value - The value to filter with
      */
     eq(column, value) {
-        this.url.searchParams.append(`${column}`, `eq.${value}`);
+        this.url.searchParams.append(column, `eq.${value}`);
         return this;
     }
     /**
-     * Finds all rows whose value on the stated `column` doesn't match the
-     * specified `value`.
+     * Match only rows where `column` is not equal to `value`.
      *
-     * @param column  The column to filter on.
-     * @param value  The value to filter with.
+     * @param column - The column to filter on
+     * @param value - The value to filter with
      */
     neq(column, value) {
-        this.url.searchParams.append(`${column}`, `neq.${value}`);
+        this.url.searchParams.append(column, `neq.${value}`);
         return this;
     }
     /**
-     * Finds all rows whose value on the stated `column` is greater than the
-     * specified `value`.
+     * Match only rows where `column` is greater than `value`.
      *
-     * @param column  The column to filter on.
-     * @param value  The value to filter with.
+     * @param column - The column to filter on
+     * @param value - The value to filter with
      */
     gt(column, value) {
-        this.url.searchParams.append(`${column}`, `gt.${value}`);
+        this.url.searchParams.append(column, `gt.${value}`);
         return this;
     }
     /**
-     * Finds all rows whose value on the stated `column` is greater than or
-     * equal to the specified `value`.
+     * Match only rows where `column` is greater than or equal to `value`.
      *
-     * @param column  The column to filter on.
-     * @param value  The value to filter with.
+     * @param column - The column to filter on
+     * @param value - The value to filter with
      */
     gte(column, value) {
-        this.url.searchParams.append(`${column}`, `gte.${value}`);
+        this.url.searchParams.append(column, `gte.${value}`);
         return this;
     }
     /**
-     * Finds all rows whose value on the stated `column` is less than the
-     * specified `value`.
+     * Match only rows where `column` is less than `value`.
      *
-     * @param column  The column to filter on.
-     * @param value  The value to filter with.
+     * @param column - The column to filter on
+     * @param value - The value to filter with
      */
     lt(column, value) {
-        this.url.searchParams.append(`${column}`, `lt.${value}`);
+        this.url.searchParams.append(column, `lt.${value}`);
         return this;
     }
     /**
-     * Finds all rows whose value on the stated `column` is less than or equal
-     * to the specified `value`.
+     * Match only rows where `column` is less than or equal to `value`.
      *
-     * @param column  The column to filter on.
-     * @param value  The value to filter with.
+     * @param column - The column to filter on
+     * @param value - The value to filter with
      */
     lte(column, value) {
-        this.url.searchParams.append(`${column}`, `lte.${value}`);
+        this.url.searchParams.append(column, `lte.${value}`);
         return this;
     }
     /**
-     * Finds all rows whose value in the stated `column` matches the supplied
-     * `pattern` (case sensitive).
+     * Match only rows where `column` matches `pattern` case-sensitively.
      *
-     * @param column  The column to filter on.
-     * @param pattern  The pattern to filter with.
+     * @param column - The column to filter on
+     * @param pattern - The pattern to match with
      */
     like(column, pattern) {
-        this.url.searchParams.append(`${column}`, `like.${pattern}`);
+        this.url.searchParams.append(column, `like.${pattern}`);
         return this;
     }
     /**
-     * Finds all rows whose value in the stated `column` matches the supplied
-     * `pattern` (case insensitive).
+     * Match only rows where `column` matches all of `patterns` case-sensitively.
      *
-     * @param column  The column to filter on.
-     * @param pattern  The pattern to filter with.
+     * @param column - The column to filter on
+     * @param patterns - The patterns to match with
+     */
+    likeAllOf(column, patterns) {
+        this.url.searchParams.append(column, `like(all).{${patterns.join(',')}}`);
+        return this;
+    }
+    /**
+     * Match only rows where `column` matches any of `patterns` case-sensitively.
+     *
+     * @param column - The column to filter on
+     * @param patterns - The patterns to match with
+     */
+    likeAnyOf(column, patterns) {
+        this.url.searchParams.append(column, `like(any).{${patterns.join(',')}}`);
+        return this;
+    }
+    /**
+     * Match only rows where `column` matches `pattern` case-insensitively.
+     *
+     * @param column - The column to filter on
+     * @param pattern - The pattern to match with
      */
     ilike(column, pattern) {
-        this.url.searchParams.append(`${column}`, `ilike.${pattern}`);
+        this.url.searchParams.append(column, `ilike.${pattern}`);
         return this;
     }
     /**
-     * A check for exact equality (null, true, false), finds all rows whose
-     * value on the stated `column` exactly match the specified `value`.
+     * Match only rows where `column` matches all of `patterns` case-insensitively.
      *
-     * @param column  The column to filter on.
-     * @param value  The value to filter with.
+     * @param column - The column to filter on
+     * @param patterns - The patterns to match with
+     */
+    ilikeAllOf(column, patterns) {
+        this.url.searchParams.append(column, `ilike(all).{${patterns.join(',')}}`);
+        return this;
+    }
+    /**
+     * Match only rows where `column` matches any of `patterns` case-insensitively.
+     *
+     * @param column - The column to filter on
+     * @param patterns - The patterns to match with
+     */
+    ilikeAnyOf(column, patterns) {
+        this.url.searchParams.append(column, `ilike(any).{${patterns.join(',')}}`);
+        return this;
+    }
+    /**
+     * Match only rows where `column` IS `value`.
+     *
+     * For non-boolean columns, this is only relevant for checking if the value of
+     * `column` is NULL by setting `value` to `null`.
+     *
+     * For boolean columns, you can also set `value` to `true` or `false` and it
+     * will behave the same way as `.eq()`.
+     *
+     * @param column - The column to filter on
+     * @param value - The value to filter with
      */
     is(column, value) {
-        this.url.searchParams.append(`${column}`, `is.${value}`);
+        this.url.searchParams.append(column, `is.${value}`);
         return this;
     }
     /**
-     * Finds all rows whose value on the stated `column` is found on the
-     * specified `values`.
+     * Match only rows where `column` is included in the `values` array.
      *
-     * @param column  The column to filter on.
-     * @param values  The values to filter with.
+     * @param column - The column to filter on
+     * @param values - The values array to filter with
      */
     in(column, values) {
         const cleanedValues = values
@@ -4156,137 +5507,141 @@ class PostgrestFilterBuilder extends PostgrestTransformBuilder_1.default {
                 return `${s}`;
         })
             .join(',');
-        this.url.searchParams.append(`${column}`, `in.(${cleanedValues})`);
+        this.url.searchParams.append(column, `in.(${cleanedValues})`);
         return this;
     }
     /**
-     * Finds all rows whose json, array, or range value on the stated `column`
-     * contains the values specified in `value`.
+     * Only relevant for jsonb, array, and range columns. Match only rows where
+     * `column` contains every element appearing in `value`.
      *
-     * @param column  The column to filter on.
-     * @param value  The value to filter with.
+     * @param column - The jsonb, array, or range column to filter on
+     * @param value - The jsonb, array, or range value to filter with
      */
     contains(column, value) {
         if (typeof value === 'string') {
             // range types can be inclusive '[', ']' or exclusive '(', ')' so just
             // keep it simple and accept a string
-            this.url.searchParams.append(`${column}`, `cs.${value}`);
+            this.url.searchParams.append(column, `cs.${value}`);
         }
         else if (Array.isArray(value)) {
             // array
-            this.url.searchParams.append(`${column}`, `cs.{${value.join(',')}}`);
+            this.url.searchParams.append(column, `cs.{${value.join(',')}}`);
         }
         else {
             // json
-            this.url.searchParams.append(`${column}`, `cs.${JSON.stringify(value)}`);
+            this.url.searchParams.append(column, `cs.${JSON.stringify(value)}`);
         }
         return this;
     }
     /**
-     * Finds all rows whose json, array, or range value on the stated `column` is
-     * contained by the specified `value`.
+     * Only relevant for jsonb, array, and range columns. Match only rows where
+     * every element appearing in `column` is contained by `value`.
      *
-     * @param column  The column to filter on.
-     * @param value  The value to filter with.
+     * @param column - The jsonb, array, or range column to filter on
+     * @param value - The jsonb, array, or range value to filter with
      */
     containedBy(column, value) {
         if (typeof value === 'string') {
             // range
-            this.url.searchParams.append(`${column}`, `cd.${value}`);
+            this.url.searchParams.append(column, `cd.${value}`);
         }
         else if (Array.isArray(value)) {
             // array
-            this.url.searchParams.append(`${column}`, `cd.{${value.join(',')}}`);
+            this.url.searchParams.append(column, `cd.{${value.join(',')}}`);
         }
         else {
             // json
-            this.url.searchParams.append(`${column}`, `cd.${JSON.stringify(value)}`);
+            this.url.searchParams.append(column, `cd.${JSON.stringify(value)}`);
         }
         return this;
     }
     /**
-     * Finds all rows whose range value on the stated `column` is strictly to the
-     * left of the specified `range`.
+     * Only relevant for range columns. Match only rows where every element in
+     * `column` is greater than any element in `range`.
      *
-     * @param column  The column to filter on.
-     * @param range  The range to filter with.
-     */
-    rangeLt(column, range) {
-        this.url.searchParams.append(`${column}`, `sl.${range}`);
-        return this;
-    }
-    /**
-     * Finds all rows whose range value on the stated `column` is strictly to
-     * the right of the specified `range`.
-     *
-     * @param column  The column to filter on.
-     * @param range  The range to filter with.
+     * @param column - The range column to filter on
+     * @param range - The range to filter with
      */
     rangeGt(column, range) {
-        this.url.searchParams.append(`${column}`, `sr.${range}`);
+        this.url.searchParams.append(column, `sr.${range}`);
         return this;
     }
     /**
-     * Finds all rows whose range value on the stated `column` does not extend
-     * to the left of the specified `range`.
+     * Only relevant for range columns. Match only rows where every element in
+     * `column` is either contained in `range` or greater than any element in
+     * `range`.
      *
-     * @param column  The column to filter on.
-     * @param range  The range to filter with.
+     * @param column - The range column to filter on
+     * @param range - The range to filter with
      */
     rangeGte(column, range) {
-        this.url.searchParams.append(`${column}`, `nxl.${range}`);
+        this.url.searchParams.append(column, `nxl.${range}`);
         return this;
     }
     /**
-     * Finds all rows whose range value on the stated `column` does not extend
-     * to the right of the specified `range`.
+     * Only relevant for range columns. Match only rows where every element in
+     * `column` is less than any element in `range`.
      *
-     * @param column  The column to filter on.
-     * @param range  The range to filter with.
+     * @param column - The range column to filter on
+     * @param range - The range to filter with
+     */
+    rangeLt(column, range) {
+        this.url.searchParams.append(column, `sl.${range}`);
+        return this;
+    }
+    /**
+     * Only relevant for range columns. Match only rows where every element in
+     * `column` is either contained in `range` or less than any element in
+     * `range`.
+     *
+     * @param column - The range column to filter on
+     * @param range - The range to filter with
      */
     rangeLte(column, range) {
-        this.url.searchParams.append(`${column}`, `nxr.${range}`);
+        this.url.searchParams.append(column, `nxr.${range}`);
         return this;
     }
     /**
-     * Finds all rows whose range value on the stated `column` is adjacent to
-     * the specified `range`.
+     * Only relevant for range columns. Match only rows where `column` is
+     * mutually exclusive to `range` and there can be no element between the two
+     * ranges.
      *
-     * @param column  The column to filter on.
-     * @param range  The range to filter with.
+     * @param column - The range column to filter on
+     * @param range - The range to filter with
      */
     rangeAdjacent(column, range) {
-        this.url.searchParams.append(`${column}`, `adj.${range}`);
+        this.url.searchParams.append(column, `adj.${range}`);
         return this;
     }
     /**
-     * Finds all rows whose array or range value on the stated `column` overlaps
-     * (has a value in common) with the specified `value`.
+     * Only relevant for array and range columns. Match only rows where
+     * `column` and `value` have an element in common.
      *
-     * @param column  The column to filter on.
-     * @param value  The value to filter with.
+     * @param column - The array or range column to filter on
+     * @param value - The array or range value to filter with
      */
     overlaps(column, value) {
         if (typeof value === 'string') {
             // range
-            this.url.searchParams.append(`${column}`, `ov.${value}`);
+            this.url.searchParams.append(column, `ov.${value}`);
         }
         else {
             // array
-            this.url.searchParams.append(`${column}`, `ov.{${value.join(',')}}`);
+            this.url.searchParams.append(column, `ov.{${value.join(',')}}`);
         }
         return this;
     }
     /**
-     * Finds all rows whose text or tsvector value on the stated `column` matches
-     * the tsquery in `query`.
+     * Only relevant for text and tsvector columns. Match only rows where
+     * `column` matches the query string in `query`.
      *
-     * @param column  The column to filter on.
-     * @param query  The Postgres tsquery string to filter with.
-     * @param config  The text search configuration to use.
-     * @param type  The type of tsquery conversion to use on `query`.
+     * @param column - The text or tsvector column to filter on
+     * @param query - The query text to match with
+     * @param options - Named parameters
+     * @param options.config - The text search configuration to use
+     * @param options.type - Change how the `query` text is interpreted
      */
-    textSearch(column, query, { config, type = null, } = {}) {
+    textSearch(column, query, { config, type } = {}) {
         let typePart = '';
         if (type === 'plain') {
             typePart = 'pl';
@@ -4298,90 +5653,72 @@ class PostgrestFilterBuilder extends PostgrestTransformBuilder_1.default {
             typePart = 'w';
         }
         const configPart = config === undefined ? '' : `(${config})`;
-        this.url.searchParams.append(`${column}`, `${typePart}fts${configPart}.${query}`);
+        this.url.searchParams.append(column, `${typePart}fts${configPart}.${query}`);
         return this;
     }
     /**
-     * Finds all rows whose tsvector value on the stated `column` matches
-     * to_tsquery(`query`).
+     * Match only rows where each column in `query` keys is equal to its
+     * associated value. Shorthand for multiple `.eq()`s.
      *
-     * @param column  The column to filter on.
-     * @param query  The Postgres tsquery string to filter with.
-     * @param config  The text search configuration to use.
-     *
-     * @deprecated Use `textSearch()` instead.
-     */
-    fts(column, query, { config } = {}) {
-        const configPart = typeof config === 'undefined' ? '' : `(${config})`;
-        this.url.searchParams.append(`${column}`, `fts${configPart}.${query}`);
-        return this;
-    }
-    /**
-     * Finds all rows whose tsvector value on the stated `column` matches
-     * plainto_tsquery(`query`).
-     *
-     * @param column  The column to filter on.
-     * @param query  The Postgres tsquery string to filter with.
-     * @param config  The text search configuration to use.
-     *
-     * @deprecated Use `textSearch()` with `type: 'plain'` instead.
-     */
-    plfts(column, query, { config } = {}) {
-        const configPart = typeof config === 'undefined' ? '' : `(${config})`;
-        this.url.searchParams.append(`${column}`, `plfts${configPart}.${query}`);
-        return this;
-    }
-    /**
-     * Finds all rows whose tsvector value on the stated `column` matches
-     * phraseto_tsquery(`query`).
-     *
-     * @param column  The column to filter on.
-     * @param query  The Postgres tsquery string to filter with.
-     * @param config  The text search configuration to use.
-     *
-     * @deprecated Use `textSearch()` with `type: 'phrase'` instead.
-     */
-    phfts(column, query, { config } = {}) {
-        const configPart = typeof config === 'undefined' ? '' : `(${config})`;
-        this.url.searchParams.append(`${column}`, `phfts${configPart}.${query}`);
-        return this;
-    }
-    /**
-     * Finds all rows whose tsvector value on the stated `column` matches
-     * websearch_to_tsquery(`query`).
-     *
-     * @param column  The column to filter on.
-     * @param query  The Postgres tsquery string to filter with.
-     * @param config  The text search configuration to use.
-     *
-     * @deprecated Use `textSearch()` with `type: 'websearch'` instead.
-     */
-    wfts(column, query, { config } = {}) {
-        const configPart = typeof config === 'undefined' ? '' : `(${config})`;
-        this.url.searchParams.append(`${column}`, `wfts${configPart}.${query}`);
-        return this;
-    }
-    /**
-     * Finds all rows whose `column` satisfies the filter.
-     *
-     * @param column  The column to filter on.
-     * @param operator  The operator to filter with.
-     * @param value  The value to filter with.
-     */
-    filter(column, operator, value) {
-        this.url.searchParams.append(`${column}`, `${operator}.${value}`);
-        return this;
-    }
-    /**
-     * Finds all rows whose columns match the specified `query` object.
-     *
-     * @param query  The object to filter with, with column names as keys mapped
-     *               to their filter values.
+     * @param query - The object to filter with, with column names as keys mapped
+     * to their filter values
      */
     match(query) {
-        Object.keys(query).forEach((key) => {
-            this.url.searchParams.append(`${key}`, `eq.${query[key]}`);
+        Object.entries(query).forEach(([column, value]) => {
+            this.url.searchParams.append(column, `eq.${value}`);
         });
+        return this;
+    }
+    /**
+     * Match only rows which doesn't satisfy the filter.
+     *
+     * Unlike most filters, `opearator` and `value` are used as-is and need to
+     * follow [PostgREST
+     * syntax](https://postgrest.org/en/stable/api.html#operators). You also need
+     * to make sure they are properly sanitized.
+     *
+     * @param column - The column to filter on
+     * @param operator - The operator to be negated to filter with, following
+     * PostgREST syntax
+     * @param value - The value to filter with, following PostgREST syntax
+     */
+    not(column, operator, value) {
+        this.url.searchParams.append(column, `not.${operator}.${value}`);
+        return this;
+    }
+    /**
+     * Match only rows which satisfy at least one of the filters.
+     *
+     * Unlike most filters, `filters` is used as-is and needs to follow [PostgREST
+     * syntax](https://postgrest.org/en/stable/api.html#operators). You also need
+     * to make sure it's properly sanitized.
+     *
+     * It's currently not possible to do an `.or()` filter across multiple tables.
+     *
+     * @param filters - The filters to use, following PostgREST syntax
+     * @param foreignTable - Set this to filter on foreign tables instead of the
+     * current table
+     */
+    or(filters, { foreignTable } = {}) {
+        const key = foreignTable ? `${foreignTable}.or` : 'or';
+        this.url.searchParams.append(key, `(${filters})`);
+        return this;
+    }
+    /**
+     * Match only rows which satisfy the filter. This is an escape hatch - you
+     * should use the specific filter methods wherever possible.
+     *
+     * Unlike most filters, `opearator` and `value` are used as-is and need to
+     * follow [PostgREST
+     * syntax](https://postgrest.org/en/stable/api.html#operators). You also need
+     * to make sure they are properly sanitized.
+     *
+     * @param column - The column to filter on
+     * @param operator - The operator to filter with, following PostgREST syntax
+     * @param value - The value to filter with, following PostgREST syntax
+     */
+    filter(column, operator, value) {
+        this.url.searchParams.append(column, `${operator}.${value}`);
         return this;
     }
 }
@@ -4390,7 +5727,7 @@ exports["default"] = PostgrestFilterBuilder;
 
 /***/ }),
 
-/***/ 6581:
+/***/ 9473:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -4399,27 +5736,40 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const types_1 = __nccwpck_require__(8259);
-const PostgrestFilterBuilder_1 = __importDefault(__nccwpck_require__(7661));
-class PostgrestQueryBuilder extends types_1.PostgrestBuilder {
-    constructor(url, { headers = {}, schema, fetch, shouldThrowOnError, } = {}) {
-        super({ fetch, shouldThrowOnError });
-        this.url = new URL(url);
-        this.headers = Object.assign({}, headers);
+const PostgrestFilterBuilder_1 = __importDefault(__nccwpck_require__(8095));
+class PostgrestQueryBuilder {
+    constructor(url, { headers = {}, schema, fetch, }) {
+        this.url = url;
+        this.headers = headers;
         this.schema = schema;
+        this.fetch = fetch;
     }
     /**
-     * Performs vertical filtering with SELECT.
+     * Perform a SELECT query on the table or view.
      *
-     * @param columns  The columns to retrieve, separated by commas.
-     * @param head  When set to true, select will void data.
-     * @param count  Count algorithm to use to count rows in a table.
+     * @param columns - The columns to retrieve, separated by commas. Columns can be renamed when returned with `customName:columnName`
+     *
+     * @param options - Named parameters
+     *
+     * @param options.head - When set to `true`, `data` will not be returned.
+     * Useful if you only need the count.
+     *
+     * @param options.count - Count algorithm to use to count rows in the table or view.
+     *
+     * `"exact"`: Exact but slow count algorithm. Performs a `COUNT(*)` under the
+     * hood.
+     *
+     * `"planned"`: Approximated but fast count algorithm. Uses the Postgres
+     * statistics under the hood.
+     *
+     * `"estimated"`: Uses exact count for low numbers and planned count for high
+     * numbers.
      */
-    select(columns = '*', { head = false, count = null, } = {}) {
-        this.method = 'GET';
+    select(columns, { head = false, count, } = {}) {
+        const method = head ? 'HEAD' : 'GET';
         // Remove whitespaces except when quoted
         let quoted = false;
-        const cleanedColumns = columns
+        const cleanedColumns = (columns !== null && columns !== void 0 ? columns : '*')
             .split('')
             .map((c) => {
             if (/\s/.test(c) && !quoted) {
@@ -4435,24 +5785,52 @@ class PostgrestQueryBuilder extends types_1.PostgrestBuilder {
         if (count) {
             this.headers['Prefer'] = `count=${count}`;
         }
-        if (head) {
-            this.method = 'HEAD';
-        }
-        return new PostgrestFilterBuilder_1.default(this);
+        return new PostgrestFilterBuilder_1.default({
+            method,
+            url: this.url,
+            headers: this.headers,
+            schema: this.schema,
+            fetch: this.fetch,
+            allowEmpty: false,
+        });
     }
-    insert(values, { upsert = false, onConflict, returning = 'representation', count = null, } = {}) {
-        this.method = 'POST';
-        const prefersHeaders = [`return=${returning}`];
-        if (upsert)
-            prefersHeaders.push('resolution=merge-duplicates');
-        if (upsert && onConflict !== undefined)
-            this.url.searchParams.set('on_conflict', onConflict);
-        this.body = values;
+    /**
+     * Perform an INSERT into the table or view.
+     *
+     * By default, inserted rows are not returned. To return it, chain the call
+     * with `.select()`.
+     *
+     * @param values - The values to insert. Pass an object to insert a single row
+     * or an array to insert multiple rows.
+     *
+     * @param options - Named parameters
+     *
+     * @param options.count - Count algorithm to use to count inserted rows.
+     *
+     * `"exact"`: Exact but slow count algorithm. Performs a `COUNT(*)` under the
+     * hood.
+     *
+     * `"planned"`: Approximated but fast count algorithm. Uses the Postgres
+     * statistics under the hood.
+     *
+     * `"estimated"`: Uses exact count for low numbers and planned count for high
+     * numbers.
+     *
+     * @param options.defaultToNull - Make missing fields default to `null`.
+     * Otherwise, use the default value for the column. Only applies for bulk
+     * inserts.
+     */
+    insert(values, { count, defaultToNull = true, } = {}) {
+        const method = 'POST';
+        const prefersHeaders = [];
+        if (this.headers['Prefer']) {
+            prefersHeaders.push(this.headers['Prefer']);
+        }
         if (count) {
             prefersHeaders.push(`count=${count}`);
         }
-        if (this.headers['Prefer']) {
-            prefersHeaders.unshift(this.headers['Prefer']);
+        if (!defaultToNull) {
+            prefersHeaders.push('missing=default');
         }
         this.headers['Prefer'] = prefersHeaders.join(',');
         if (Array.isArray(values)) {
@@ -4462,64 +5840,149 @@ class PostgrestQueryBuilder extends types_1.PostgrestBuilder {
                 this.url.searchParams.set('columns', uniqueColumns.join(','));
             }
         }
-        return new PostgrestFilterBuilder_1.default(this);
+        return new PostgrestFilterBuilder_1.default({
+            method,
+            url: this.url,
+            headers: this.headers,
+            schema: this.schema,
+            body: values,
+            fetch: this.fetch,
+            allowEmpty: false,
+        });
     }
     /**
-     * Performs an UPSERT into the table.
+     * Perform an UPSERT on the table or view. Depending on the column(s) passed
+     * to `onConflict`, `.upsert()` allows you to perform the equivalent of
+     * `.insert()` if a row with the corresponding `onConflict` columns doesn't
+     * exist, or if it does exist, perform an alternative action depending on
+     * `ignoreDuplicates`.
      *
-     * @param values  The values to insert.
-     * @param onConflict  By specifying the `on_conflict` query parameter, you can make UPSERT work on a column(s) that has a UNIQUE constraint.
-     * @param returning  By default the new record is returned. Set this to 'minimal' if you don't need this value.
-     * @param count  Count algorithm to use to count rows in a table.
-     * @param ignoreDuplicates  Specifies if duplicate rows should be ignored and not inserted.
+     * By default, upserted rows are not returned. To return it, chain the call
+     * with `.select()`.
+     *
+     * @param values - The values to upsert with. Pass an object to upsert a
+     * single row or an array to upsert multiple rows.
+     *
+     * @param options - Named parameters
+     *
+     * @param options.onConflict - Comma-separated UNIQUE column(s) to specify how
+     * duplicate rows are determined. Two rows are duplicates if all the
+     * `onConflict` columns are equal.
+     *
+     * @param options.ignoreDuplicates - If `true`, duplicate rows are ignored. If
+     * `false`, duplicate rows are merged with existing rows.
+     *
+     * @param options.count - Count algorithm to use to count upserted rows.
+     *
+     * `"exact"`: Exact but slow count algorithm. Performs a `COUNT(*)` under the
+     * hood.
+     *
+     * `"planned"`: Approximated but fast count algorithm. Uses the Postgres
+     * statistics under the hood.
+     *
+     * `"estimated"`: Uses exact count for low numbers and planned count for high
+     * numbers.
+     *
+     * @param options.defaultToNull - Make missing fields default to `null`.
+     * Otherwise, use the default value for the column. This only applies when
+     * inserting new rows, not when merging with existing rows under
+     * `ignoreDuplicates: false`. This also only applies when doing bulk upserts.
      */
-    upsert(values, { onConflict, returning = 'representation', count = null, ignoreDuplicates = false, } = {}) {
-        this.method = 'POST';
-        const prefersHeaders = [
-            `resolution=${ignoreDuplicates ? 'ignore' : 'merge'}-duplicates`,
-            `return=${returning}`,
-        ];
+    upsert(values, { onConflict, ignoreDuplicates = false, count, defaultToNull = true, } = {}) {
+        const method = 'POST';
+        const prefersHeaders = [`resolution=${ignoreDuplicates ? 'ignore' : 'merge'}-duplicates`];
         if (onConflict !== undefined)
             this.url.searchParams.set('on_conflict', onConflict);
-        this.body = values;
+        if (this.headers['Prefer']) {
+            prefersHeaders.push(this.headers['Prefer']);
+        }
         if (count) {
             prefersHeaders.push(`count=${count}`);
         }
-        if (this.headers['Prefer']) {
-            prefersHeaders.unshift(this.headers['Prefer']);
+        if (!defaultToNull) {
+            prefersHeaders.push('missing=default');
         }
         this.headers['Prefer'] = prefersHeaders.join(',');
-        return new PostgrestFilterBuilder_1.default(this);
+        if (Array.isArray(values)) {
+            const columns = values.reduce((acc, x) => acc.concat(Object.keys(x)), []);
+            if (columns.length > 0) {
+                const uniqueColumns = [...new Set(columns)].map((column) => `"${column}"`);
+                this.url.searchParams.set('columns', uniqueColumns.join(','));
+            }
+        }
+        return new PostgrestFilterBuilder_1.default({
+            method,
+            url: this.url,
+            headers: this.headers,
+            schema: this.schema,
+            body: values,
+            fetch: this.fetch,
+            allowEmpty: false,
+        });
     }
     /**
-     * Performs an UPDATE on the table.
+     * Perform an UPDATE on the table or view.
      *
-     * @param values  The values to update.
-     * @param returning  By default the updated record is returned. Set this to 'minimal' if you don't need this value.
-     * @param count  Count algorithm to use to count rows in a table.
+     * By default, updated rows are not returned. To return it, chain the call
+     * with `.select()` after filters.
+     *
+     * @param values - The values to update with
+     *
+     * @param options - Named parameters
+     *
+     * @param options.count - Count algorithm to use to count updated rows.
+     *
+     * `"exact"`: Exact but slow count algorithm. Performs a `COUNT(*)` under the
+     * hood.
+     *
+     * `"planned"`: Approximated but fast count algorithm. Uses the Postgres
+     * statistics under the hood.
+     *
+     * `"estimated"`: Uses exact count for low numbers and planned count for high
+     * numbers.
      */
-    update(values, { returning = 'representation', count = null, } = {}) {
-        this.method = 'PATCH';
-        const prefersHeaders = [`return=${returning}`];
-        this.body = values;
+    update(values, { count, } = {}) {
+        const method = 'PATCH';
+        const prefersHeaders = [];
+        if (this.headers['Prefer']) {
+            prefersHeaders.push(this.headers['Prefer']);
+        }
         if (count) {
             prefersHeaders.push(`count=${count}`);
         }
-        if (this.headers['Prefer']) {
-            prefersHeaders.unshift(this.headers['Prefer']);
-        }
         this.headers['Prefer'] = prefersHeaders.join(',');
-        return new PostgrestFilterBuilder_1.default(this);
+        return new PostgrestFilterBuilder_1.default({
+            method,
+            url: this.url,
+            headers: this.headers,
+            schema: this.schema,
+            body: values,
+            fetch: this.fetch,
+            allowEmpty: false,
+        });
     }
     /**
-     * Performs a DELETE on the table.
+     * Perform a DELETE on the table or view.
      *
-     * @param returning  If `true`, return the deleted row(s) in the response.
-     * @param count  Count algorithm to use to count rows in a table.
+     * By default, deleted rows are not returned. To return it, chain the call
+     * with `.select()` after filters.
+     *
+     * @param options - Named parameters
+     *
+     * @param options.count - Count algorithm to use to count deleted rows.
+     *
+     * `"exact"`: Exact but slow count algorithm. Performs a `COUNT(*)` under the
+     * hood.
+     *
+     * `"planned"`: Approximated but fast count algorithm. Uses the Postgres
+     * statistics under the hood.
+     *
+     * `"estimated"`: Uses exact count for low numbers and planned count for high
+     * numbers.
      */
-    delete({ returning = 'representation', count = null, } = {}) {
-        this.method = 'DELETE';
-        const prefersHeaders = [`return=${returning}`];
+    delete({ count, } = {}) {
+        const method = 'DELETE';
+        const prefersHeaders = [];
         if (count) {
             prefersHeaders.push(`count=${count}`);
         }
@@ -4527,7 +5990,14 @@ class PostgrestQueryBuilder extends types_1.PostgrestBuilder {
             prefersHeaders.unshift(this.headers['Prefer']);
         }
         this.headers['Prefer'] = prefersHeaders.join(',');
-        return new PostgrestFilterBuilder_1.default(this);
+        return new PostgrestFilterBuilder_1.default({
+            method,
+            url: this.url,
+            headers: this.headers,
+            schema: this.schema,
+            fetch: this.fetch,
+            allowEmpty: false,
+        });
     }
 }
 exports["default"] = PostgrestQueryBuilder;
@@ -4535,7 +6005,7 @@ exports["default"] = PostgrestQueryBuilder;
 
 /***/ }),
 
-/***/ 6324:
+/***/ 3693:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -4544,65 +6014,21 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const types_1 = __nccwpck_require__(8259);
-const PostgrestFilterBuilder_1 = __importDefault(__nccwpck_require__(7661));
-class PostgrestRpcBuilder extends types_1.PostgrestBuilder {
-    constructor(url, { headers = {}, schema, fetch, shouldThrowOnError, } = {}) {
-        super({ fetch, shouldThrowOnError });
-        this.url = new URL(url);
-        this.headers = Object.assign({}, headers);
-        this.schema = schema;
-    }
+const PostgrestBuilder_1 = __importDefault(__nccwpck_require__(2097));
+class PostgrestTransformBuilder extends PostgrestBuilder_1.default {
     /**
-     * Perform a function call.
-     */
-    rpc(params, { head = false, count = null, } = {}) {
-        if (head) {
-            this.method = 'HEAD';
-            if (params) {
-                Object.entries(params).forEach(([name, value]) => {
-                    this.url.searchParams.append(name, value);
-                });
-            }
-        }
-        else {
-            this.method = 'POST';
-            this.body = params;
-        }
-        if (count) {
-            if (this.headers['Prefer'] !== undefined)
-                this.headers['Prefer'] += `,count=${count}`;
-            else
-                this.headers['Prefer'] = `count=${count}`;
-        }
-        return new PostgrestFilterBuilder_1.default(this);
-    }
-}
-exports["default"] = PostgrestRpcBuilder;
-//# sourceMappingURL=PostgrestRpcBuilder.js.map
-
-/***/ }),
-
-/***/ 364:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const types_1 = __nccwpck_require__(8259);
-/**
- * Post-filters (transforms)
- */
-class PostgrestTransformBuilder extends types_1.PostgrestBuilder {
-    /**
-     * Performs vertical filtering with SELECT.
+     * Perform a SELECT on the query result.
      *
-     * @param columns  The columns to retrieve, separated by commas.
+     * By default, `.insert()`, `.update()`, `.upsert()`, and `.delete()` do not
+     * return modified rows. By calling this method, modified rows are returned in
+     * `data`.
+     *
+     * @param columns - The columns to retrieve, separated by commas
      */
-    select(columns = '*') {
+    select(columns) {
         // Remove whitespaces except when quoted
         let quoted = false;
-        const cleanedColumns = columns
+        const cleanedColumns = (columns !== null && columns !== void 0 ? columns : '*')
             .split('')
             .map((c) => {
             if (/\s/.test(c) && !quoted) {
@@ -4615,27 +6041,41 @@ class PostgrestTransformBuilder extends types_1.PostgrestBuilder {
         })
             .join('');
         this.url.searchParams.set('select', cleanedColumns);
+        if (this.headers['Prefer']) {
+            this.headers['Prefer'] += ',';
+        }
+        this.headers['Prefer'] += 'return=representation';
         return this;
     }
     /**
-     * Orders the result with the specified `column`.
+     * Order the query result by `column`.
      *
-     * @param column  The column to order on.
-     * @param ascending  If `true`, the result will be in ascending order.
-     * @param nullsFirst  If `true`, `null`s appear first.
-     * @param foreignTable  The foreign table to use (if `column` is a foreign column).
+     * You can call this method multiple times to order by multiple columns.
+     *
+     * You can order foreign tables, but it doesn't affect the ordering of the
+     * current table.
+     *
+     * @param column - The column to order by
+     * @param options - Named parameters
+     * @param options.ascending - If `true`, the result will be in ascending order
+     * @param options.nullsFirst - If `true`, `null`s appear first. If `false`,
+     * `null`s appear last.
+     * @param options.foreignTable - Set this to order a foreign table by foreign
+     * columns
      */
-    order(column, { ascending = true, nullsFirst = false, foreignTable, } = {}) {
-        const key = typeof foreignTable === 'undefined' ? 'order' : `${foreignTable}.order`;
+    order(column, { ascending = true, nullsFirst, foreignTable, } = {}) {
+        const key = foreignTable ? `${foreignTable}.order` : 'order';
         const existingOrder = this.url.searchParams.get(key);
-        this.url.searchParams.set(key, `${existingOrder ? `${existingOrder},` : ''}${column}.${ascending ? 'asc' : 'desc'}.${nullsFirst ? 'nullsfirst' : 'nullslast'}`);
+        this.url.searchParams.set(key, `${existingOrder ? `${existingOrder},` : ''}${column}.${ascending ? 'asc' : 'desc'}${nullsFirst === undefined ? '' : nullsFirst ? '.nullsfirst' : '.nullslast'}`);
         return this;
     }
     /**
-     * Limits the result with the specified `count`.
+     * Limit the query result by `count`.
      *
-     * @param count  The maximum no. of rows to limit to.
-     * @param foreignTable  The foreign table to use (for foreign columns).
+     * @param count - The maximum number of rows to return
+     * @param options - Named parameters
+     * @param options.foreignTable - Set this to limit rows of foreign tables
+     * instead of the current table
      */
     limit(count, { foreignTable } = {}) {
         const key = typeof foreignTable === 'undefined' ? 'limit' : `${foreignTable}.limit`;
@@ -4643,11 +6083,17 @@ class PostgrestTransformBuilder extends types_1.PostgrestBuilder {
         return this;
     }
     /**
-     * Limits the result to rows within the specified range, inclusive.
+     * Limit the query result by starting at an offset (`from`) and ending at the offset (`from + to`).
+     * Only records within this range are returned.
+     * This respects the query order and if there is no order clause the range could behave unexpectedly.
+     * The `from` and `to` values are 0-based and inclusive: `range(1, 3)` will include the second, third
+     * and fourth rows of the query.
      *
-     * @param from  The starting index from which to limit the result, inclusive.
-     * @param to  The last index to which to limit the result, inclusive.
-     * @param foreignTable  The foreign table to use (for foreign columns).
+     * @param from - The starting index from which to limit the result
+     * @param to - The last index to which to limit the result
+     * @param options - Named parameters
+     * @param options.foreignTable - Set this to limit rows of foreign tables
+     * instead of the current table
      */
     range(from, to, { foreignTable } = {}) {
         const keyOffset = typeof foreignTable === 'undefined' ? 'offset' : `${foreignTable}.offset`;
@@ -4658,35 +6104,116 @@ class PostgrestTransformBuilder extends types_1.PostgrestBuilder {
         return this;
     }
     /**
-     * Sets the AbortSignal for the fetch request.
+     * Set the AbortSignal for the fetch request.
+     *
+     * @param signal - The AbortSignal to use for the fetch request
      */
     abortSignal(signal) {
         this.signal = signal;
         return this;
     }
     /**
-     * Retrieves only one row from the result. Result must be one row (e.g. using
-     * `limit`), otherwise this will result in an error.
+     * Return `data` as a single object instead of an array of objects.
+     *
+     * Query result must be one row (e.g. using `.limit(1)`), otherwise this
+     * returns an error.
      */
     single() {
         this.headers['Accept'] = 'application/vnd.pgrst.object+json';
         return this;
     }
     /**
-     * Retrieves at most one row from the result. Result must be at most one row
-     * (e.g. using `eq` on a UNIQUE column), otherwise this will result in an
-     * error.
+     * Return `data` as a single object instead of an array of objects.
+     *
+     * Query result must be zero or one row (e.g. using `.limit(1)`), otherwise
+     * this returns an error.
      */
     maybeSingle() {
-        this.headers['Accept'] = 'application/vnd.pgrst.object+json';
-        this.allowEmpty = true;
+        // Temporary partial fix for https://github.com/supabase/postgrest-js/issues/361
+        // Issue persists e.g. for `.insert([...]).select().maybeSingle()`
+        if (this.method === 'GET') {
+            this.headers['Accept'] = 'application/json';
+        }
+        else {
+            this.headers['Accept'] = 'application/vnd.pgrst.object+json';
+        }
+        this.isMaybeSingle = true;
         return this;
     }
     /**
-     * Set the response type to CSV.
+     * Return `data` as a string in CSV format.
      */
     csv() {
         this.headers['Accept'] = 'text/csv';
+        return this;
+    }
+    /**
+     * Return `data` as an object in [GeoJSON](https://geojson.org) format.
+     */
+    geojson() {
+        this.headers['Accept'] = 'application/geo+json';
+        return this;
+    }
+    /**
+     * Return `data` as the EXPLAIN plan for the query.
+     *
+     * @param options - Named parameters
+     *
+     * @param options.analyze - If `true`, the query will be executed and the
+     * actual run time will be returned
+     *
+     * @param options.verbose - If `true`, the query identifier will be returned
+     * and `data` will include the output columns of the query
+     *
+     * @param options.settings - If `true`, include information on configuration
+     * parameters that affect query planning
+     *
+     * @param options.buffers - If `true`, include information on buffer usage
+     *
+     * @param options.wal - If `true`, include information on WAL record generation
+     *
+     * @param options.format - The format of the output, can be `"text"` (default)
+     * or `"json"`
+     */
+    explain({ analyze = false, verbose = false, settings = false, buffers = false, wal = false, format = 'text', } = {}) {
+        const options = [
+            analyze ? 'analyze' : null,
+            verbose ? 'verbose' : null,
+            settings ? 'settings' : null,
+            buffers ? 'buffers' : null,
+            wal ? 'wal' : null,
+        ]
+            .filter(Boolean)
+            .join('|');
+        // An Accept header can carry multiple media types but postgrest-js always sends one
+        const forMediatype = this.headers['Accept'];
+        this.headers['Accept'] = `application/vnd.pgrst.plan+${format}; for="${forMediatype}"; options=${options};`;
+        if (format === 'json')
+            return this;
+        else
+            return this;
+    }
+    /**
+     * Rollback the query.
+     *
+     * `data` will still be returned, but the query is not committed.
+     */
+    rollback() {
+        var _a;
+        if (((_a = this.headers['Prefer']) !== null && _a !== void 0 ? _a : '').trim().length > 0) {
+            this.headers['Prefer'] += ',tx=rollback';
+        }
+        else {
+            this.headers['Prefer'] = 'tx=rollback';
+        }
+        return this;
+    }
+    /**
+     * Override the type of the returned `data`.
+     *
+     * @typeParam NewResult - The new result type to override with
+     */
+    returns() {
         return this;
     }
 }
@@ -4695,27 +6222,67 @@ exports["default"] = PostgrestTransformBuilder;
 
 /***/ }),
 
-/***/ 5510:
+/***/ 1592:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.DEFAULT_HEADERS = void 0;
-const version_1 = __nccwpck_require__(6415);
+const version_1 = __nccwpck_require__(6637);
 exports.DEFAULT_HEADERS = { 'X-Client-Info': `postgrest-js/${version_1.version}` };
 //# sourceMappingURL=constants.js.map
 
 /***/ }),
 
-/***/ 8259:
+/***/ 9645:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.PostgrestBuilder = exports.PostgrestTransformBuilder = exports.PostgrestFilterBuilder = exports.PostgrestQueryBuilder = exports.PostgrestClient = void 0;
+var PostgrestClient_1 = __nccwpck_require__(3878);
+Object.defineProperty(exports, "PostgrestClient", ({ enumerable: true, get: function () { return __importDefault(PostgrestClient_1).default; } }));
+var PostgrestQueryBuilder_1 = __nccwpck_require__(9473);
+Object.defineProperty(exports, "PostgrestQueryBuilder", ({ enumerable: true, get: function () { return __importDefault(PostgrestQueryBuilder_1).default; } }));
+var PostgrestFilterBuilder_1 = __nccwpck_require__(8095);
+Object.defineProperty(exports, "PostgrestFilterBuilder", ({ enumerable: true, get: function () { return __importDefault(PostgrestFilterBuilder_1).default; } }));
+var PostgrestTransformBuilder_1 = __nccwpck_require__(3693);
+Object.defineProperty(exports, "PostgrestTransformBuilder", ({ enumerable: true, get: function () { return __importDefault(PostgrestTransformBuilder_1).default; } }));
+var PostgrestBuilder_1 = __nccwpck_require__(2097);
+Object.defineProperty(exports, "PostgrestBuilder", ({ enumerable: true, get: function () { return __importDefault(PostgrestBuilder_1).default; } }));
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 6637:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.version = void 0;
+exports.version = '1.8.0';
+//# sourceMappingURL=version.js.map
+
+/***/ }),
+
+/***/ 6947:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -4741,150 +6308,458 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.PostgrestBuilder = void 0;
-class PostgrestBuilder {
-    constructor(builder) {
-        Object.assign(this, builder);
-        let _fetch;
-        if (builder.fetch) {
-            _fetch = builder.fetch;
-        }
-        else if (typeof fetch === 'undefined') {
-            _fetch = (...args) => __awaiter(this, void 0, void 0, function* () { return yield (yield Promise.resolve().then(() => __importStar(__nccwpck_require__(8624)))).fetch(...args); });
+exports.REALTIME_SUBSCRIBE_STATES = exports.REALTIME_LISTEN_TYPES = exports.REALTIME_POSTGRES_CHANGES_LISTEN_EVENT = void 0;
+const constants_1 = __nccwpck_require__(6076);
+const push_1 = __importDefault(__nccwpck_require__(8421));
+const timer_1 = __importDefault(__nccwpck_require__(8658));
+const RealtimePresence_1 = __importDefault(__nccwpck_require__(7940));
+const Transformers = __importStar(__nccwpck_require__(1462));
+var REALTIME_POSTGRES_CHANGES_LISTEN_EVENT;
+(function (REALTIME_POSTGRES_CHANGES_LISTEN_EVENT) {
+    REALTIME_POSTGRES_CHANGES_LISTEN_EVENT["ALL"] = "*";
+    REALTIME_POSTGRES_CHANGES_LISTEN_EVENT["INSERT"] = "INSERT";
+    REALTIME_POSTGRES_CHANGES_LISTEN_EVENT["UPDATE"] = "UPDATE";
+    REALTIME_POSTGRES_CHANGES_LISTEN_EVENT["DELETE"] = "DELETE";
+})(REALTIME_POSTGRES_CHANGES_LISTEN_EVENT = exports.REALTIME_POSTGRES_CHANGES_LISTEN_EVENT || (exports.REALTIME_POSTGRES_CHANGES_LISTEN_EVENT = {}));
+var REALTIME_LISTEN_TYPES;
+(function (REALTIME_LISTEN_TYPES) {
+    REALTIME_LISTEN_TYPES["BROADCAST"] = "broadcast";
+    REALTIME_LISTEN_TYPES["PRESENCE"] = "presence";
+    /**
+     * listen to Postgres changes.
+     */
+    REALTIME_LISTEN_TYPES["POSTGRES_CHANGES"] = "postgres_changes";
+})(REALTIME_LISTEN_TYPES = exports.REALTIME_LISTEN_TYPES || (exports.REALTIME_LISTEN_TYPES = {}));
+var REALTIME_SUBSCRIBE_STATES;
+(function (REALTIME_SUBSCRIBE_STATES) {
+    REALTIME_SUBSCRIBE_STATES["SUBSCRIBED"] = "SUBSCRIBED";
+    REALTIME_SUBSCRIBE_STATES["TIMED_OUT"] = "TIMED_OUT";
+    REALTIME_SUBSCRIBE_STATES["CLOSED"] = "CLOSED";
+    REALTIME_SUBSCRIBE_STATES["CHANNEL_ERROR"] = "CHANNEL_ERROR";
+})(REALTIME_SUBSCRIBE_STATES = exports.REALTIME_SUBSCRIBE_STATES || (exports.REALTIME_SUBSCRIBE_STATES = {}));
+/** A channel is the basic building block of Realtime
+ * and narrows the scope of data flow to subscribed clients.
+ * You can think of a channel as a chatroom where participants are able to see who's online
+ * and send and receive messages.
+ **/
+class RealtimeChannel {
+    constructor(
+    /** Topic name can be any string. */
+    topic, params = { config: {} }, socket) {
+        this.topic = topic;
+        this.params = params;
+        this.socket = socket;
+        this.bindings = {};
+        this.state = constants_1.CHANNEL_STATES.closed;
+        this.joinedOnce = false;
+        this.pushBuffer = [];
+        this.params.config = Object.assign({
+            broadcast: { ack: false, self: false },
+            presence: { key: '' },
+        }, params.config);
+        this.timeout = this.socket.timeout;
+        this.joinPush = new push_1.default(this, constants_1.CHANNEL_EVENTS.join, this.params, this.timeout);
+        this.rejoinTimer = new timer_1.default(() => this._rejoinUntilConnected(), this.socket.reconnectAfterMs);
+        this.joinPush.receive('ok', () => {
+            this.state = constants_1.CHANNEL_STATES.joined;
+            this.rejoinTimer.reset();
+            this.pushBuffer.forEach((pushEvent) => pushEvent.send());
+            this.pushBuffer = [];
+        });
+        this._onClose(() => {
+            this.rejoinTimer.reset();
+            this.socket.log('channel', `close ${this.topic} ${this._joinRef()}`);
+            this.state = constants_1.CHANNEL_STATES.closed;
+            this.socket._remove(this);
+        });
+        this._onError((reason) => {
+            if (this._isLeaving() || this._isClosed()) {
+                return;
+            }
+            this.socket.log('channel', `error ${this.topic}`, reason);
+            this.state = constants_1.CHANNEL_STATES.errored;
+            this.rejoinTimer.scheduleTimeout();
+        });
+        this.joinPush.receive('timeout', () => {
+            if (!this._isJoining()) {
+                return;
+            }
+            this.socket.log('channel', `timeout ${this.topic}`, this.joinPush.timeout);
+            this.state = constants_1.CHANNEL_STATES.errored;
+            this.rejoinTimer.scheduleTimeout();
+        });
+        this._on(constants_1.CHANNEL_EVENTS.reply, {}, (payload, ref) => {
+            this._trigger(this._replyEventName(ref), payload);
+        });
+        this.presence = new RealtimePresence_1.default(this);
+    }
+    /** Subscribe registers your client with the server */
+    subscribe(callback, timeout = this.timeout) {
+        var _a, _b;
+        if (this.joinedOnce) {
+            throw `tried to subscribe multiple times. 'subscribe' can only be called a single time per channel instance`;
         }
         else {
-            _fetch = fetch;
+            const { config: { broadcast, presence }, } = this.params;
+            this._onError((e) => callback && callback('CHANNEL_ERROR', e));
+            this._onClose(() => callback && callback('CLOSED'));
+            const accessTokenPayload = {};
+            const config = {
+                broadcast,
+                presence,
+                postgres_changes: (_b = (_a = this.bindings.postgres_changes) === null || _a === void 0 ? void 0 : _a.map((r) => r.filter)) !== null && _b !== void 0 ? _b : [],
+            };
+            if (this.socket.accessToken) {
+                accessTokenPayload.access_token = this.socket.accessToken;
+            }
+            this.updateJoinPayload(Object.assign({ config }, accessTokenPayload));
+            this.joinedOnce = true;
+            this._rejoin(timeout);
+            this.joinPush
+                .receive('ok', ({ postgres_changes: serverPostgresFilters, }) => {
+                var _a;
+                this.socket.accessToken &&
+                    this.socket.setAuth(this.socket.accessToken);
+                if (serverPostgresFilters === undefined) {
+                    callback && callback('SUBSCRIBED');
+                    return;
+                }
+                else {
+                    const clientPostgresBindings = this.bindings.postgres_changes;
+                    const bindingsLen = (_a = clientPostgresBindings === null || clientPostgresBindings === void 0 ? void 0 : clientPostgresBindings.length) !== null && _a !== void 0 ? _a : 0;
+                    const newPostgresBindings = [];
+                    for (let i = 0; i < bindingsLen; i++) {
+                        const clientPostgresBinding = clientPostgresBindings[i];
+                        const { filter: { event, schema, table, filter }, } = clientPostgresBinding;
+                        const serverPostgresFilter = serverPostgresFilters && serverPostgresFilters[i];
+                        if (serverPostgresFilter &&
+                            serverPostgresFilter.event === event &&
+                            serverPostgresFilter.schema === schema &&
+                            serverPostgresFilter.table === table &&
+                            serverPostgresFilter.filter === filter) {
+                            newPostgresBindings.push(Object.assign(Object.assign({}, clientPostgresBinding), { id: serverPostgresFilter.id }));
+                        }
+                        else {
+                            this.unsubscribe();
+                            callback &&
+                                callback('CHANNEL_ERROR', new Error('mismatch between server and client bindings for postgres changes'));
+                            return;
+                        }
+                    }
+                    this.bindings.postgres_changes = newPostgresBindings;
+                    callback && callback('SUBSCRIBED');
+                    return;
+                }
+            })
+                .receive('error', (error) => {
+                callback &&
+                    callback('CHANNEL_ERROR', new Error(JSON.stringify(Object.values(error).join(', ') || 'error')));
+                return;
+            })
+                .receive('timeout', () => {
+                callback && callback('TIMED_OUT');
+                return;
+            });
         }
-        this.fetch = (...args) => _fetch(...args);
-        this.shouldThrowOnError = builder.shouldThrowOnError || false;
-        this.allowEmpty = builder.allowEmpty || false;
-    }
-    /**
-     * If there's an error with the query, throwOnError will reject the promise by
-     * throwing the error instead of returning it as part of a successful response.
-     *
-     * {@link https://github.com/supabase/supabase-js/issues/92}
-     */
-    throwOnError(throwOnError) {
-        if (throwOnError === null || throwOnError === undefined) {
-            throwOnError = true;
-        }
-        this.shouldThrowOnError = throwOnError;
         return this;
     }
-    then(onfulfilled, onrejected) {
-        // https://postgrest.org/en/stable/api.html#switching-schemas
-        if (typeof this.schema === 'undefined') {
-            // skip
+    presenceState() {
+        return this.presence.state;
+    }
+    track(payload, opts = {}) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this.send({
+                type: 'presence',
+                event: 'track',
+                payload,
+            }, opts.timeout || this.timeout);
+        });
+    }
+    untrack(opts = {}) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this.send({
+                type: 'presence',
+                event: 'untrack',
+            }, opts);
+        });
+    }
+    on(type, filter, callback) {
+        return this._on(type, filter, callback);
+    }
+    send(payload, opts = {}) {
+        return new Promise((resolve) => {
+            var _a, _b, _c;
+            const push = this._push(payload.type, payload, opts.timeout || this.timeout);
+            if (push.rateLimited) {
+                resolve('rate limited');
+            }
+            if (payload.type === 'broadcast' &&
+                !((_c = (_b = (_a = this.params) === null || _a === void 0 ? void 0 : _a.config) === null || _b === void 0 ? void 0 : _b.broadcast) === null || _c === void 0 ? void 0 : _c.ack)) {
+                resolve('ok');
+            }
+            push.receive('ok', () => resolve('ok'));
+            push.receive('timeout', () => resolve('timed out'));
+        });
+    }
+    updateJoinPayload(payload) {
+        this.joinPush.updatePayload(payload);
+    }
+    /**
+     * Leaves the channel.
+     *
+     * Unsubscribes from server events, and instructs channel to terminate on server.
+     * Triggers onClose() hooks.
+     *
+     * To receive leave acknowledgements, use the a `receive` hook to bind to the server ack, ie:
+     * channel.unsubscribe().receive("ok", () => alert("left!") )
+     */
+    unsubscribe(timeout = this.timeout) {
+        this.state = constants_1.CHANNEL_STATES.leaving;
+        const onClose = () => {
+            this.socket.log('channel', `leave ${this.topic}`);
+            this._trigger(constants_1.CHANNEL_EVENTS.close, 'leave', this._joinRef());
+        };
+        this.rejoinTimer.reset();
+        // Destroy joinPush to avoid connection timeouts during unscription phase
+        this.joinPush.destroy();
+        return new Promise((resolve) => {
+            const leavePush = new push_1.default(this, constants_1.CHANNEL_EVENTS.leave, {}, timeout);
+            leavePush
+                .receive('ok', () => {
+                onClose();
+                resolve('ok');
+            })
+                .receive('timeout', () => {
+                onClose();
+                resolve('timed out');
+            })
+                .receive('error', () => {
+                resolve('error');
+            });
+            leavePush.send();
+            if (!this._canPush()) {
+                leavePush.trigger('ok', {});
+            }
+        });
+    }
+    /** @internal */
+    _push(event, payload, timeout = this.timeout) {
+        if (!this.joinedOnce) {
+            throw `tried to push '${event}' to '${this.topic}' before joining. Use channel.subscribe() before pushing events`;
         }
-        else if (['GET', 'HEAD'].includes(this.method)) {
-            this.headers['Accept-Profile'] = this.schema;
+        let pushEvent = new push_1.default(this, event, payload, timeout);
+        if (this._canPush()) {
+            pushEvent.send();
         }
         else {
-            this.headers['Content-Profile'] = this.schema;
+            pushEvent.startTimeout();
+            this.pushBuffer.push(pushEvent);
         }
-        if (this.method !== 'GET' && this.method !== 'HEAD') {
-            this.headers['Content-Type'] = 'application/json';
+        return pushEvent;
+    }
+    /**
+     * Overridable message hook
+     *
+     * Receives all events for specialized message handling before dispatching to the channel callbacks.
+     * Must return the payload, modified or unmodified.
+     *
+     * @internal
+     */
+    _onMessage(_event, payload, _ref) {
+        return payload;
+    }
+    /** @internal */
+    _isMember(topic) {
+        return this.topic === topic;
+    }
+    /** @internal */
+    _joinRef() {
+        return this.joinPush.ref;
+    }
+    /** @internal */
+    _trigger(type, payload, ref) {
+        var _a, _b;
+        const typeLower = type.toLocaleLowerCase();
+        const { close, error, leave, join } = constants_1.CHANNEL_EVENTS;
+        const events = [close, error, leave, join];
+        if (ref && events.indexOf(typeLower) >= 0 && ref !== this._joinRef()) {
+            return;
         }
-        let res = this.fetch(this.url.toString(), {
-            method: this.method,
-            headers: this.headers,
-            body: JSON.stringify(this.body),
-            signal: this.signal,
-        }).then((res) => __awaiter(this, void 0, void 0, function* () {
-            var _a, _b, _c, _d;
-            let error = null;
-            let data = null;
-            let count = null;
-            let status = res.status;
-            let statusText = res.statusText;
-            if (res.ok) {
-                const isReturnMinimal = (_a = this.headers['Prefer']) === null || _a === void 0 ? void 0 : _a.split(',').includes('return=minimal');
-                if (this.method !== 'HEAD' && !isReturnMinimal) {
-                    const text = yield res.text();
-                    if (!text) {
-                        // discard `text`
-                    }
-                    else if (this.headers['Accept'] === 'text/csv') {
-                        data = text;
+        let handledPayload = this._onMessage(typeLower, payload, ref);
+        if (payload && !handledPayload) {
+            throw 'channel onMessage callbacks must return the payload, modified or unmodified';
+        }
+        if (['insert', 'update', 'delete'].includes(typeLower)) {
+            (_a = this.bindings.postgres_changes) === null || _a === void 0 ? void 0 : _a.filter((bind) => {
+                var _a, _b, _c;
+                return (((_a = bind.filter) === null || _a === void 0 ? void 0 : _a.event) === '*' ||
+                    ((_c = (_b = bind.filter) === null || _b === void 0 ? void 0 : _b.event) === null || _c === void 0 ? void 0 : _c.toLocaleLowerCase()) === typeLower);
+            }).map((bind) => bind.callback(handledPayload, ref));
+        }
+        else {
+            (_b = this.bindings[typeLower]) === null || _b === void 0 ? void 0 : _b.filter((bind) => {
+                var _a, _b, _c, _d, _e, _f;
+                if (['broadcast', 'presence', 'postgres_changes'].includes(typeLower)) {
+                    if ('id' in bind) {
+                        const bindId = bind.id;
+                        const bindEvent = (_a = bind.filter) === null || _a === void 0 ? void 0 : _a.event;
+                        return (bindId &&
+                            ((_b = payload.ids) === null || _b === void 0 ? void 0 : _b.includes(bindId)) &&
+                            (bindEvent === '*' ||
+                                (bindEvent === null || bindEvent === void 0 ? void 0 : bindEvent.toLocaleLowerCase()) ===
+                                    ((_c = payload.data) === null || _c === void 0 ? void 0 : _c.type.toLocaleLowerCase())));
                     }
                     else {
-                        data = JSON.parse(text);
+                        const bindEvent = (_e = (_d = bind === null || bind === void 0 ? void 0 : bind.filter) === null || _d === void 0 ? void 0 : _d.event) === null || _e === void 0 ? void 0 : _e.toLocaleLowerCase();
+                        return (bindEvent === '*' ||
+                            bindEvent === ((_f = payload === null || payload === void 0 ? void 0 : payload.event) === null || _f === void 0 ? void 0 : _f.toLocaleLowerCase()));
                     }
                 }
-                const countHeader = (_b = this.headers['Prefer']) === null || _b === void 0 ? void 0 : _b.match(/count=(exact|planned|estimated)/);
-                const contentRange = (_c = res.headers.get('content-range')) === null || _c === void 0 ? void 0 : _c.split('/');
-                if (countHeader && contentRange && contentRange.length > 1) {
-                    count = parseInt(contentRange[1]);
+                else {
+                    return bind.type.toLocaleLowerCase() === typeLower;
                 }
-            }
-            else {
-                const body = yield res.text();
-                try {
-                    error = JSON.parse(body);
-                }
-                catch (_e) {
-                    error = {
-                        message: body,
+            }).map((bind) => {
+                if (typeof handledPayload === 'object' && 'ids' in handledPayload) {
+                    const postgresChanges = handledPayload.data;
+                    const { schema, table, commit_timestamp, type, errors } = postgresChanges;
+                    const enrichedPayload = {
+                        schema: schema,
+                        table: table,
+                        commit_timestamp: commit_timestamp,
+                        eventType: type,
+                        new: {},
+                        old: {},
+                        errors: errors,
                     };
+                    handledPayload = Object.assign(Object.assign({}, enrichedPayload), this._getPayloadRecords(postgresChanges));
                 }
-                if (error && this.allowEmpty && ((_d = error === null || error === void 0 ? void 0 : error.details) === null || _d === void 0 ? void 0 : _d.includes('Results contain 0 rows'))) {
-                    error = null;
-                    status = 200;
-                    statusText = 'OK';
-                }
-                if (error && this.shouldThrowOnError) {
-                    throw error;
-                }
-            }
-            const postgrestResponse = {
-                error,
-                data,
-                count,
-                status,
-                statusText,
-                body: data,
-            };
-            return postgrestResponse;
-        }));
-        if (!this.shouldThrowOnError) {
-            res = res.catch((fetchError) => ({
-                error: {
-                    message: `FetchError: ${fetchError.message}`,
-                    details: '',
-                    hint: '',
-                    code: fetchError.code || '',
-                },
-                data: null,
-                body: null,
-                count: null,
-                status: 400,
-                statusText: 'Bad Request',
-            }));
+                bind.callback(handledPayload, ref);
+            });
         }
-        return res.then(onfulfilled, onrejected);
+    }
+    /** @internal */
+    _isClosed() {
+        return this.state === constants_1.CHANNEL_STATES.closed;
+    }
+    /** @internal */
+    _isJoined() {
+        return this.state === constants_1.CHANNEL_STATES.joined;
+    }
+    /** @internal */
+    _isJoining() {
+        return this.state === constants_1.CHANNEL_STATES.joining;
+    }
+    /** @internal */
+    _isLeaving() {
+        return this.state === constants_1.CHANNEL_STATES.leaving;
+    }
+    /** @internal */
+    _replyEventName(ref) {
+        return `chan_reply_${ref}`;
+    }
+    /** @internal */
+    _on(type, filter, callback) {
+        const typeLower = type.toLocaleLowerCase();
+        const binding = {
+            type: typeLower,
+            filter: filter,
+            callback: callback,
+        };
+        if (this.bindings[typeLower]) {
+            this.bindings[typeLower].push(binding);
+        }
+        else {
+            this.bindings[typeLower] = [binding];
+        }
+        return this;
+    }
+    /** @internal */
+    _off(type, filter) {
+        const typeLower = type.toLocaleLowerCase();
+        this.bindings[typeLower] = this.bindings[typeLower].filter((bind) => {
+            var _a;
+            return !(((_a = bind.type) === null || _a === void 0 ? void 0 : _a.toLocaleLowerCase()) === typeLower &&
+                RealtimeChannel.isEqual(bind.filter, filter));
+        });
+        return this;
+    }
+    /** @internal */
+    static isEqual(obj1, obj2) {
+        if (Object.keys(obj1).length !== Object.keys(obj2).length) {
+            return false;
+        }
+        for (const k in obj1) {
+            if (obj1[k] !== obj2[k]) {
+                return false;
+            }
+        }
+        return true;
+    }
+    /** @internal */
+    _rejoinUntilConnected() {
+        this.rejoinTimer.scheduleTimeout();
+        if (this.socket.isConnected()) {
+            this._rejoin();
+        }
+    }
+    /**
+     * Registers a callback that will be executed when the channel closes.
+     *
+     * @internal
+     */
+    _onClose(callback) {
+        this._on(constants_1.CHANNEL_EVENTS.close, {}, callback);
+    }
+    /**
+     * Registers a callback that will be executed when the channel encounteres an error.
+     *
+     * @internal
+     */
+    _onError(callback) {
+        this._on(constants_1.CHANNEL_EVENTS.error, {}, (reason) => callback(reason));
+    }
+    /**
+     * Returns `true` if the socket is connected and the channel has been joined.
+     *
+     * @internal
+     */
+    _canPush() {
+        return this.socket.isConnected() && this._isJoined();
+    }
+    /** @internal */
+    _rejoin(timeout = this.timeout) {
+        if (this._isLeaving()) {
+            return;
+        }
+        this.socket._leaveOpenTopic(this.topic);
+        this.state = constants_1.CHANNEL_STATES.joining;
+        this.joinPush.resend(timeout);
+    }
+    /** @internal */
+    _getPayloadRecords(payload) {
+        const records = {
+            new: {},
+            old: {},
+        };
+        if (payload.type === 'INSERT' || payload.type === 'UPDATE') {
+            records.new = Transformers.convertChangeData(payload.columns, payload.record);
+        }
+        if (payload.type === 'UPDATE' || payload.type === 'DELETE') {
+            records.old = Transformers.convertChangeData(payload.columns, payload.old_record);
+        }
+        return records;
     }
 }
-exports.PostgrestBuilder = PostgrestBuilder;
-//# sourceMappingURL=types.js.map
+exports["default"] = RealtimeChannel;
+//# sourceMappingURL=RealtimeChannel.js.map
 
 /***/ }),
 
-/***/ 6415:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.version = void 0;
-// generated by genversion
-exports.version = '0.37.4';
-//# sourceMappingURL=version.js.map
-
-/***/ }),
-
-/***/ 449:
+/***/ 8429:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -4903,10 +6778,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const websocket_1 = __nccwpck_require__(1568);
-const constants_1 = __nccwpck_require__(9149);
-const timer_1 = __importDefault(__nccwpck_require__(1966));
-const serializer_1 = __importDefault(__nccwpck_require__(9028));
-const RealtimeSubscription_1 = __importDefault(__nccwpck_require__(6199));
+const constants_1 = __nccwpck_require__(6076);
+const timer_1 = __importDefault(__nccwpck_require__(8658));
+const serializer_1 = __importDefault(__nccwpck_require__(4964));
+const RealtimeChannel_1 = __importDefault(__nccwpck_require__(6947));
 const noop = () => { };
 class RealtimeClient {
     /**
@@ -4921,10 +6796,10 @@ class RealtimeClient {
      * @param options.logger The optional function for specialized logging, ie: logger: (kind, msg, data) => { console.log(`${kind}: ${msg}`, data) }
      * @param options.encode The function to encode outgoing messages. Defaults to JSON: (payload, callback) => callback(JSON.stringify(payload))
      * @param options.decode The function to decode incoming messages. Defaults to Serializer's decode.
-     * @param options.longpollerTimeout The maximum timeout of a long poll AJAX request. Defaults to 20s (double the server long poll timer).
      * @param options.reconnectAfterMs he optional function that returns the millsec reconnect interval. Defaults to stepped backoff off.
      */
     constructor(endPoint, options) {
+        var _a;
         this.accessToken = null;
         this.channels = [];
         this.endPoint = '';
@@ -4933,7 +6808,6 @@ class RealtimeClient {
         this.timeout = constants_1.DEFAULT_TIMEOUT;
         this.transport = websocket_1.w3cwebsocket;
         this.heartbeatIntervalMs = 30000;
-        this.longpollerTimeout = 20000;
         this.heartbeatTimer = undefined;
         this.pendingHeartbeatRef = null;
         this.ref = 0;
@@ -4947,6 +6821,8 @@ class RealtimeClient {
             error: [],
             message: [],
         };
+        this.eventsPerSecondLimitMs = 100;
+        this.inThrottle = false;
         this.endPoint = `${endPoint}/${constants_1.TRANSPORTS.websocket}`;
         if (options === null || options === void 0 ? void 0 : options.params)
             this.params = options.params;
@@ -4960,20 +6836,24 @@ class RealtimeClient {
             this.transport = options.transport;
         if (options === null || options === void 0 ? void 0 : options.heartbeatIntervalMs)
             this.heartbeatIntervalMs = options.heartbeatIntervalMs;
-        if (options === null || options === void 0 ? void 0 : options.longpollerTimeout)
-            this.longpollerTimeout = options.longpollerTimeout;
-        this.reconnectAfterMs = (options === null || options === void 0 ? void 0 : options.reconnectAfterMs) ? options.reconnectAfterMs
+        const eventsPerSecond = (_a = options === null || options === void 0 ? void 0 : options.params) === null || _a === void 0 ? void 0 : _a.eventsPerSecond;
+        if (eventsPerSecond)
+            this.eventsPerSecondLimitMs = Math.floor(1000 / eventsPerSecond);
+        this.reconnectAfterMs = (options === null || options === void 0 ? void 0 : options.reconnectAfterMs)
+            ? options.reconnectAfterMs
             : (tries) => {
                 return [1000, 2000, 5000, 10000][tries - 1] || 10000;
             };
-        this.encode = (options === null || options === void 0 ? void 0 : options.encode) ? options.encode
+        this.encode = (options === null || options === void 0 ? void 0 : options.encode)
+            ? options.encode
             : (payload, callback) => {
                 return callback(JSON.stringify(payload));
             };
-        this.decode = (options === null || options === void 0 ? void 0 : options.decode) ? options.decode
+        this.decode = (options === null || options === void 0 ? void 0 : options.decode)
+            ? options.decode
             : this.serializer.decode.bind(this.serializer);
         this.reconnectTimer = new timer_1.default(() => __awaiter(this, void 0, void 0, function* () {
-            yield this.disconnect();
+            this.disconnect();
             this.connect();
         }), this.reconnectAfterMs);
     }
@@ -4984,13 +6864,12 @@ class RealtimeClient {
         if (this.conn) {
             return;
         }
-        this.conn = new this.transport(this.endPointURL(), [], null, this.headers);
+        this.conn = new this.transport(this._endPointURL(), [], null, this.headers);
         if (this.conn) {
-            // this.conn.timeout = this.longpollerTimeout // TYPE ERROR
             this.conn.binaryType = 'arraybuffer';
             this.conn.onopen = () => this._onConnOpen();
             this.conn.onerror = (error) => this._onConnError(error);
-            this.conn.onmessage = (event) => this.onConnMessage(event);
+            this.conn.onmessage = (event) => this._onConnMessage(event);
             this.conn.onclose = (event) => this._onConnClose(event);
         }
     }
@@ -5001,79 +6880,56 @@ class RealtimeClient {
      * @param reason A custom reason for the disconnect.
      */
     disconnect(code, reason) {
-        return new Promise((resolve, _reject) => {
-            try {
-                if (this.conn) {
-                    this.conn.onclose = function () { }; // noop
-                    if (code) {
-                        this.conn.close(code, reason || '');
-                    }
-                    else {
-                        this.conn.close();
-                    }
-                    this.conn = null;
-                    // remove open handles
-                    this.heartbeatTimer && clearInterval(this.heartbeatTimer);
-                    this.reconnectTimer.reset();
-                }
-                resolve({ error: null, data: true });
+        if (this.conn) {
+            this.conn.onclose = function () { }; // noop
+            if (code) {
+                this.conn.close(code, reason !== null && reason !== void 0 ? reason : '');
             }
-            catch (error) {
-                resolve({ error: error, data: false });
+            else {
+                this.conn.close();
             }
+            this.conn = null;
+            // remove open handles
+            this.heartbeatTimer && clearInterval(this.heartbeatTimer);
+            this.reconnectTimer.reset();
+        }
+    }
+    /**
+     * Returns all created channels
+     */
+    getChannels() {
+        return this.channels;
+    }
+    /**
+     * Unsubscribes and removes a single channel
+     * @param channel A RealtimeChannel instance
+     */
+    removeChannel(channel) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const status = yield channel.unsubscribe();
+            if (this.channels.length === 0) {
+                this.disconnect();
+            }
+            return status;
+        });
+    }
+    /**
+     * Unsubscribes and removes all channels
+     */
+    removeAllChannels() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const values_1 = yield Promise.all(this.channels.map((channel) => channel.unsubscribe()));
+            this.disconnect();
+            return values_1;
         });
     }
     /**
      * Logs the message.
      *
-     * For customized logging, `this.logger` can be overriden.
+     * For customized logging, `this.logger` can be overridden.
      */
     log(kind, msg, data) {
         this.logger(kind, msg, data);
-    }
-    /**
-     * Registers a callback for connection state change event.
-     *
-     * @param callback A function to be called when the event occurs.
-     *
-     * @example
-     *    socket.onOpen(() => console.log("Socket opened."))
-     */
-    onOpen(callback) {
-        this.stateChangeCallbacks.open.push(callback);
-    }
-    /**
-     * Registers a callback for connection state change events.
-     *
-     * @param callback A function to be called when the event occurs.
-     *
-     * @example
-     *    socket.onOpen(() => console.log("Socket closed."))
-     */
-    onClose(callback) {
-        this.stateChangeCallbacks.close.push(callback);
-    }
-    /**
-     * Registers a callback for connection state change events.
-     *
-     * @param callback A function to be called when the event occurs.
-     *
-     * @example
-     *    socket.onOpen((error) => console.log("An error occurred"))
-     */
-    onError(callback) {
-        this.stateChangeCallbacks.error.push(callback);
-    }
-    /**
-     * Calls a function any time a message is received.
-     *
-     * @param callback A function to be called when the event occurs.
-     *
-     * @example
-     *    socket.onMessage((message) => console.log(message))
-     */
-    onMessage(callback) {
-        this.stateChangeCallbacks.message.push(callback);
     }
     /**
      * Returns the current state of the socket.
@@ -5091,21 +6947,16 @@ class RealtimeClient {
         }
     }
     /**
-     * Retuns `true` is the connection is open.
+     * Returns `true` is the connection is open.
      */
     isConnected() {
         return this.connectionState() === constants_1.CONNECTION_STATE.Open;
     }
-    /**
-     * Removes a subscription from the socket.
-     *
-     * @param channel An open subscription.
-     */
-    remove(channel) {
-        this.channels = this.channels.filter((c) => c.joinRef() !== channel.joinRef());
-    }
-    channel(topic, chanParams = {}) {
-        const chan = new RealtimeSubscription_1.default(topic, chanParams, this);
+    channel(topic, params = { config: {} }) {
+        if (!this.isConnected()) {
+            this.connect();
+        }
+        const chan = new RealtimeChannel_1.default(`realtime:${topic}`, params, this);
         this.channels.push(chan);
         return chan;
     }
@@ -5124,36 +6975,40 @@ class RealtimeClient {
         };
         this.log('push', `${topic} ${event} (${ref})`, payload);
         if (this.isConnected()) {
-            callback();
+            if (['broadcast', 'presence', 'postgres_changes'].includes(event)) {
+                const isThrottled = this._throttle(callback)();
+                if (isThrottled) {
+                    return 'rate limited';
+                }
+            }
+            else {
+                callback();
+            }
         }
         else {
             this.sendBuffer.push(callback);
         }
     }
-    onConnMessage(rawMessage) {
-        this.decode(rawMessage.data, (msg) => {
-            let { topic, event, payload, ref } = msg;
-            if ((ref && ref === this.pendingHeartbeatRef) ||
-                event === (payload === null || payload === void 0 ? void 0 : payload.type)) {
-                this.pendingHeartbeatRef = null;
+    /**
+     * Sets the JWT access token used for channel subscription authorization and Realtime RLS.
+     *
+     * @param token A JWT string.
+     */
+    setAuth(token) {
+        this.accessToken = token;
+        this.channels.forEach((channel) => {
+            token && channel.updateJoinPayload({ access_token: token });
+            if (channel.joinedOnce && channel._isJoined()) {
+                channel._push(constants_1.CHANNEL_EVENTS.access_token, { access_token: token });
             }
-            this.log('receive', `${payload.status || ''} ${topic} ${event} ${(ref && '(' + ref + ')') || ''}`, payload);
-            this.channels
-                .filter((channel) => channel.isMember(topic))
-                .forEach((channel) => channel.trigger(event, payload, ref));
-            this.stateChangeCallbacks.message.forEach((callback) => callback(msg));
         });
     }
     /**
-     * Returns the URL of the websocket.
-     */
-    endPointURL() {
-        return this._appendParams(this.endPoint, Object.assign({}, this.params, { vsn: constants_1.VSN }));
-    }
-    /**
      * Return the next message ref, accounting for overflows
+     *
+     * @internal
      */
-    makeRef() {
+    _makeRef() {
         let newRef = this.ref + 1;
         if (newRef === this.ref) {
             this.ref = 0;
@@ -5164,37 +7019,60 @@ class RealtimeClient {
         return this.ref.toString();
     }
     /**
-     * Sets the JWT access token used for channel subscription authorization and Realtime RLS.
-     *
-     * @param token A JWT string.
-     */
-    setAuth(token) {
-        this.accessToken = token;
-        this.channels.forEach((channel) => {
-            token && channel.updateJoinPayload({ user_token: token });
-            if (channel.joinedOnce && channel.isJoined()) {
-                channel.push(constants_1.CHANNEL_EVENTS.access_token, { access_token: token });
-            }
-        });
-    }
-    /**
      * Unsubscribe from channels with the specified topic.
+     *
+     * @internal
      */
-    leaveOpenTopic(topic) {
-        let dupChannel = this.channels.find((c) => c.topic === topic && (c.isJoined() || c.isJoining()));
+    _leaveOpenTopic(topic) {
+        let dupChannel = this.channels.find((c) => c.topic === topic && (c._isJoined() || c._isJoining()));
         if (dupChannel) {
             this.log('transport', `leaving duplicate topic "${topic}"`);
             dupChannel.unsubscribe();
         }
     }
+    /**
+     * Removes a subscription from the socket.
+     *
+     * @param channel An open subscription.
+     *
+     * @internal
+     */
+    _remove(channel) {
+        this.channels = this.channels.filter((c) => c._joinRef() !== channel._joinRef());
+    }
+    /**
+     * Returns the URL of the websocket.
+     *
+     * @internal
+     */
+    _endPointURL() {
+        return this._appendParams(this.endPoint, Object.assign({}, this.params, { vsn: constants_1.VSN }));
+    }
+    /** @internal */
+    _onConnMessage(rawMessage) {
+        this.decode(rawMessage.data, (msg) => {
+            let { topic, event, payload, ref } = msg;
+            if ((ref && ref === this.pendingHeartbeatRef) ||
+                event === (payload === null || payload === void 0 ? void 0 : payload.type)) {
+                this.pendingHeartbeatRef = null;
+            }
+            this.log('receive', `${payload.status || ''} ${topic} ${event} ${(ref && '(' + ref + ')') || ''}`, payload);
+            this.channels
+                .filter((channel) => channel._isMember(topic))
+                .forEach((channel) => channel._trigger(event, payload, ref));
+            this.stateChangeCallbacks.message.forEach((callback) => callback(msg));
+        });
+    }
+    /** @internal */
     _onConnOpen() {
-        this.log('transport', `connected to ${this.endPointURL()}`);
+        this.log('transport', `connected to ${this._endPointURL()}`);
         this._flushSendBuffer();
         this.reconnectTimer.reset();
         this.heartbeatTimer && clearInterval(this.heartbeatTimer);
         this.heartbeatTimer = setInterval(() => this._sendHeartbeat(), this.heartbeatIntervalMs);
         this.stateChangeCallbacks.open.forEach((callback) => callback());
     }
+    /** @internal */
     _onConnClose(event) {
         this.log('transport', 'close', event);
         this._triggerChanError();
@@ -5202,14 +7080,17 @@ class RealtimeClient {
         this.reconnectTimer.scheduleTimeout();
         this.stateChangeCallbacks.close.forEach((callback) => callback(event));
     }
+    /** @internal */
     _onConnError(error) {
         this.log('transport', error.message);
         this._triggerChanError();
         this.stateChangeCallbacks.error.forEach((callback) => callback(error));
     }
+    /** @internal */
     _triggerChanError() {
-        this.channels.forEach((channel) => channel.trigger(constants_1.CHANNEL_EVENTS.error));
+        this.channels.forEach((channel) => channel._trigger(constants_1.CHANNEL_EVENTS.error));
     }
+    /** @internal */
     _appendParams(url, params) {
         if (Object.keys(params).length === 0) {
             return url;
@@ -5218,12 +7099,14 @@ class RealtimeClient {
         const query = new URLSearchParams(params);
         return `${url}${prefix}${query}`;
     }
+    /** @internal */
     _flushSendBuffer() {
         if (this.isConnected() && this.sendBuffer.length > 0) {
             this.sendBuffer.forEach((callback) => callback());
             this.sendBuffer = [];
         }
     }
+    /** @internal */
     _sendHeartbeat() {
         var _a;
         if (!this.isConnected()) {
@@ -5235,7 +7118,7 @@ class RealtimeClient {
             (_a = this.conn) === null || _a === void 0 ? void 0 : _a.close(constants_1.WS_CLOSE_NORMAL, 'hearbeat timeout');
             return;
         }
-        this.pendingHeartbeatRef = this.makeRef();
+        this.pendingHeartbeatRef = this._makeRef();
         this.push({
             topic: 'phoenix',
             event: 'heartbeat',
@@ -5244,218 +7127,274 @@ class RealtimeClient {
         });
         this.setAuth(this.accessToken);
     }
+    /** @internal */
+    _throttle(callback, eventsPerSecondLimitMs = this.eventsPerSecondLimitMs) {
+        return () => {
+            if (this.inThrottle)
+                return true;
+            callback();
+            if (eventsPerSecondLimitMs > 0) {
+                this.inThrottle = true;
+                setTimeout(() => {
+                    this.inThrottle = false;
+                }, eventsPerSecondLimitMs);
+            }
+            return false;
+        };
+    }
 }
 exports["default"] = RealtimeClient;
 //# sourceMappingURL=RealtimeClient.js.map
 
 /***/ }),
 
-/***/ 6199:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ 7940:
+/***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
+/*
+  This file draws heavily from https://github.com/phoenixframework/phoenix/blob/d344ec0a732ab4ee204215b31de69cf4be72e3bf/assets/js/phoenix/presence.js
+  License: https://github.com/phoenixframework/phoenix/blob/d344ec0a732ab4ee204215b31de69cf4be72e3bf/LICENSE.md
+*/
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const constants_1 = __nccwpck_require__(9149);
-const push_1 = __importDefault(__nccwpck_require__(2987));
-const timer_1 = __importDefault(__nccwpck_require__(1966));
-class RealtimeSubscription {
-    constructor(topic, params = {}, socket) {
-        this.topic = topic;
-        this.params = params;
-        this.socket = socket;
-        this.bindings = [];
-        this.state = constants_1.CHANNEL_STATES.closed;
-        this.joinedOnce = false;
-        this.pushBuffer = [];
-        this.timeout = this.socket.timeout;
-        this.joinPush = new push_1.default(this, constants_1.CHANNEL_EVENTS.join, this.params, this.timeout);
-        this.rejoinTimer = new timer_1.default(() => this.rejoinUntilConnected(), this.socket.reconnectAfterMs);
-        this.joinPush.receive('ok', () => {
-            this.state = constants_1.CHANNEL_STATES.joined;
-            this.rejoinTimer.reset();
-            this.pushBuffer.forEach((pushEvent) => pushEvent.send());
-            this.pushBuffer = [];
-        });
-        this.onClose(() => {
-            this.rejoinTimer.reset();
-            this.socket.log('channel', `close ${this.topic} ${this.joinRef()}`);
-            this.state = constants_1.CHANNEL_STATES.closed;
-            this.socket.remove(this);
-        });
-        this.onError((reason) => {
-            if (this.isLeaving() || this.isClosed()) {
-                return;
-            }
-            this.socket.log('channel', `error ${this.topic}`, reason);
-            this.state = constants_1.CHANNEL_STATES.errored;
-            this.rejoinTimer.scheduleTimeout();
-        });
-        this.joinPush.receive('timeout', () => {
-            if (!this.isJoining()) {
-                return;
-            }
-            this.socket.log('channel', `timeout ${this.topic}`, this.joinPush.timeout);
-            this.state = constants_1.CHANNEL_STATES.errored;
-            this.rejoinTimer.scheduleTimeout();
-        });
-        this.on(constants_1.CHANNEL_EVENTS.reply, (payload, ref) => {
-            this.trigger(this.replyEventName(ref), payload);
-        });
-    }
-    rejoinUntilConnected() {
-        this.rejoinTimer.scheduleTimeout();
-        if (this.socket.isConnected()) {
-            this.rejoin();
-        }
-    }
-    subscribe(timeout = this.timeout) {
-        if (this.joinedOnce) {
-            throw `tried to subscribe multiple times. 'subscribe' can only be called a single time per channel instance`;
-        }
-        else {
-            this.joinedOnce = true;
-            this.rejoin(timeout);
-            return this.joinPush;
-        }
-    }
-    onClose(callback) {
-        this.on(constants_1.CHANNEL_EVENTS.close, callback);
-    }
-    onError(callback) {
-        this.on(constants_1.CHANNEL_EVENTS.error, (reason) => callback(reason));
-    }
-    on(event, callback) {
-        this.bindings.push({ event, callback });
-    }
-    off(event) {
-        this.bindings = this.bindings.filter((bind) => bind.event !== event);
-    }
-    canPush() {
-        return this.socket.isConnected() && this.isJoined();
-    }
-    push(event, payload, timeout = this.timeout) {
-        if (!this.joinedOnce) {
-            throw `tried to push '${event}' to '${this.topic}' before joining. Use channel.subscribe() before pushing events`;
-        }
-        let pushEvent = new push_1.default(this, event, payload, timeout);
-        if (this.canPush()) {
-            pushEvent.send();
-        }
-        else {
-            pushEvent.startTimeout();
-            this.pushBuffer.push(pushEvent);
-        }
-        return pushEvent;
-    }
-    updateJoinPayload(payload) {
-        this.joinPush.updatePayload(payload);
-    }
+exports.REALTIME_PRESENCE_LISTEN_EVENTS = void 0;
+var REALTIME_PRESENCE_LISTEN_EVENTS;
+(function (REALTIME_PRESENCE_LISTEN_EVENTS) {
+    REALTIME_PRESENCE_LISTEN_EVENTS["SYNC"] = "sync";
+    REALTIME_PRESENCE_LISTEN_EVENTS["JOIN"] = "join";
+    REALTIME_PRESENCE_LISTEN_EVENTS["LEAVE"] = "leave";
+})(REALTIME_PRESENCE_LISTEN_EVENTS = exports.REALTIME_PRESENCE_LISTEN_EVENTS || (exports.REALTIME_PRESENCE_LISTEN_EVENTS = {}));
+class RealtimePresence {
     /**
-     * Leaves the channel
+     * Initializes the Presence.
      *
-     * Unsubscribes from server events, and instructs channel to terminate on server.
-     * Triggers onClose() hooks.
-     *
-     * To receive leave acknowledgements, use the a `receive` hook to bind to the server ack, ie:
-     * channel.unsubscribe().receive("ok", () => alert("left!") )
+     * @param channel - The RealtimeChannel
+     * @param opts - The options,
+     *        for example `{events: {state: 'state', diff: 'diff'}}`
      */
-    unsubscribe(timeout = this.timeout) {
-        this.state = constants_1.CHANNEL_STATES.leaving;
-        let onClose = () => {
-            this.socket.log('channel', `leave ${this.topic}`);
-            this.trigger(constants_1.CHANNEL_EVENTS.close, 'leave', this.joinRef());
+    constructor(channel, opts) {
+        this.channel = channel;
+        this.state = {};
+        this.pendingDiffs = [];
+        this.joinRef = null;
+        this.caller = {
+            onJoin: () => { },
+            onLeave: () => { },
+            onSync: () => { },
         };
-        // Destroy joinPush to avoid connection timeouts during unscription phase
-        this.joinPush.destroy();
-        let leavePush = new push_1.default(this, constants_1.CHANNEL_EVENTS.leave, {}, timeout);
-        leavePush.receive('ok', () => onClose()).receive('timeout', () => onClose());
-        leavePush.send();
-        if (!this.canPush()) {
-            leavePush.trigger('ok', {});
-        }
-        return leavePush;
-    }
-    /**
-     * Overridable message hook
-     *
-     * Receives all events for specialized message handling before dispatching to the channel callbacks.
-     * Must return the payload, modified or unmodified.
-     */
-    onMessage(event, payload, ref) {
-        return payload;
-    }
-    isMember(topic) {
-        return this.topic === topic;
-    }
-    joinRef() {
-        return this.joinPush.ref;
-    }
-    rejoin(timeout = this.timeout) {
-        if (this.isLeaving()) {
-            return;
-        }
-        this.socket.leaveOpenTopic(this.topic);
-        this.state = constants_1.CHANNEL_STATES.joining;
-        this.joinPush.resend(timeout);
-    }
-    trigger(event, payload, ref) {
-        let { close, error, leave, join } = constants_1.CHANNEL_EVENTS;
-        let events = [close, error, leave, join];
-        if (ref && events.indexOf(event) >= 0 && ref !== this.joinRef()) {
-            return;
-        }
-        let handledPayload = this.onMessage(event, payload, ref);
-        if (payload && !handledPayload) {
-            throw 'channel onMessage callbacks must return the payload, modified or unmodified';
-        }
-        this.bindings
-            .filter((bind) => {
-            // Bind all events if the user specifies a wildcard.
-            if (bind.event === '*') {
-                return event === (payload === null || payload === void 0 ? void 0 : payload.type);
+        const events = (opts === null || opts === void 0 ? void 0 : opts.events) || {
+            state: 'presence_state',
+            diff: 'presence_diff',
+        };
+        this.channel._on(events.state, {}, (newState) => {
+            const { onJoin, onLeave, onSync } = this.caller;
+            this.joinRef = this.channel._joinRef();
+            this.state = RealtimePresence.syncState(this.state, newState, onJoin, onLeave);
+            this.pendingDiffs.forEach((diff) => {
+                this.state = RealtimePresence.syncDiff(this.state, diff, onJoin, onLeave);
+            });
+            this.pendingDiffs = [];
+            onSync();
+        });
+        this.channel._on(events.diff, {}, (diff) => {
+            const { onJoin, onLeave, onSync } = this.caller;
+            if (this.inPendingSyncState()) {
+                this.pendingDiffs.push(diff);
             }
             else {
-                return bind.event === event;
+                this.state = RealtimePresence.syncDiff(this.state, diff, onJoin, onLeave);
+                onSync();
             }
-        })
-            .map((bind) => bind.callback(handledPayload, ref));
+        });
+        this.onJoin((key, currentPresences, newPresences) => {
+            this.channel._trigger('presence', {
+                event: 'join',
+                key,
+                currentPresences,
+                newPresences,
+            });
+        });
+        this.onLeave((key, currentPresences, leftPresences) => {
+            this.channel._trigger('presence', {
+                event: 'leave',
+                key,
+                currentPresences,
+                leftPresences,
+            });
+        });
+        this.onSync(() => {
+            this.channel._trigger('presence', { event: 'sync' });
+        });
     }
-    replyEventName(ref) {
-        return `chan_reply_${ref}`;
+    /**
+     * Used to sync the list of presences on the server with the
+     * client's state.
+     *
+     * An optional `onJoin` and `onLeave` callback can be provided to
+     * react to changes in the client's local presences across
+     * disconnects and reconnects with the server.
+     *
+     * @internal
+     */
+    static syncState(currentState, newState, onJoin, onLeave) {
+        const state = this.cloneDeep(currentState);
+        const transformedState = this.transformState(newState);
+        const joins = {};
+        const leaves = {};
+        this.map(state, (key, presences) => {
+            if (!transformedState[key]) {
+                leaves[key] = presences;
+            }
+        });
+        this.map(transformedState, (key, newPresences) => {
+            const currentPresences = state[key];
+            if (currentPresences) {
+                const newPresenceRefs = newPresences.map((m) => m.presence_ref);
+                const curPresenceRefs = currentPresences.map((m) => m.presence_ref);
+                const joinedPresences = newPresences.filter((m) => curPresenceRefs.indexOf(m.presence_ref) < 0);
+                const leftPresences = currentPresences.filter((m) => newPresenceRefs.indexOf(m.presence_ref) < 0);
+                if (joinedPresences.length > 0) {
+                    joins[key] = joinedPresences;
+                }
+                if (leftPresences.length > 0) {
+                    leaves[key] = leftPresences;
+                }
+            }
+            else {
+                joins[key] = newPresences;
+            }
+        });
+        return this.syncDiff(state, { joins, leaves }, onJoin, onLeave);
     }
-    isClosed() {
-        return this.state === constants_1.CHANNEL_STATES.closed;
+    /**
+     * Used to sync a diff of presence join and leave events from the
+     * server, as they happen.
+     *
+     * Like `syncState`, `syncDiff` accepts optional `onJoin` and
+     * `onLeave` callbacks to react to a user joining or leaving from a
+     * device.
+     *
+     * @internal
+     */
+    static syncDiff(state, diff, onJoin, onLeave) {
+        const { joins, leaves } = {
+            joins: this.transformState(diff.joins),
+            leaves: this.transformState(diff.leaves),
+        };
+        if (!onJoin) {
+            onJoin = () => { };
+        }
+        if (!onLeave) {
+            onLeave = () => { };
+        }
+        this.map(joins, (key, newPresences) => {
+            var _a;
+            const currentPresences = (_a = state[key]) !== null && _a !== void 0 ? _a : [];
+            state[key] = this.cloneDeep(newPresences);
+            if (currentPresences.length > 0) {
+                const joinedPresenceRefs = state[key].map((m) => m.presence_ref);
+                const curPresences = currentPresences.filter((m) => joinedPresenceRefs.indexOf(m.presence_ref) < 0);
+                state[key].unshift(...curPresences);
+            }
+            onJoin(key, currentPresences, newPresences);
+        });
+        this.map(leaves, (key, leftPresences) => {
+            let currentPresences = state[key];
+            if (!currentPresences)
+                return;
+            const presenceRefsToRemove = leftPresences.map((m) => m.presence_ref);
+            currentPresences = currentPresences.filter((m) => presenceRefsToRemove.indexOf(m.presence_ref) < 0);
+            state[key] = currentPresences;
+            onLeave(key, currentPresences, leftPresences);
+            if (currentPresences.length === 0)
+                delete state[key];
+        });
+        return state;
     }
-    isErrored() {
-        return this.state === constants_1.CHANNEL_STATES.errored;
+    /** @internal */
+    static map(obj, func) {
+        return Object.getOwnPropertyNames(obj).map((key) => func(key, obj[key]));
     }
-    isJoined() {
-        return this.state === constants_1.CHANNEL_STATES.joined;
+    /**
+     * Remove 'metas' key
+     * Change 'phx_ref' to 'presence_ref'
+     * Remove 'phx_ref' and 'phx_ref_prev'
+     *
+     * @example
+     * // returns {
+     *  abc123: [
+     *    { presence_ref: '2', user_id: 1 },
+     *    { presence_ref: '3', user_id: 2 }
+     *  ]
+     * }
+     * RealtimePresence.transformState({
+     *  abc123: {
+     *    metas: [
+     *      { phx_ref: '2', phx_ref_prev: '1' user_id: 1 },
+     *      { phx_ref: '3', user_id: 2 }
+     *    ]
+     *  }
+     * })
+     *
+     * @internal
+     */
+    static transformState(state) {
+        state = this.cloneDeep(state);
+        return Object.getOwnPropertyNames(state).reduce((newState, key) => {
+            const presences = state[key];
+            if ('metas' in presences) {
+                newState[key] = presences.metas.map((presence) => {
+                    presence['presence_ref'] = presence['phx_ref'];
+                    delete presence['phx_ref'];
+                    delete presence['phx_ref_prev'];
+                    return presence;
+                });
+            }
+            else {
+                newState[key] = presences;
+            }
+            return newState;
+        }, {});
     }
-    isJoining() {
-        return this.state === constants_1.CHANNEL_STATES.joining;
+    /** @internal */
+    static cloneDeep(obj) {
+        return JSON.parse(JSON.stringify(obj));
     }
-    isLeaving() {
-        return this.state === constants_1.CHANNEL_STATES.leaving;
+    /** @internal */
+    onJoin(callback) {
+        this.caller.onJoin = callback;
+    }
+    /** @internal */
+    onLeave(callback) {
+        this.caller.onLeave = callback;
+    }
+    /** @internal */
+    onSync(callback) {
+        this.caller.onSync = callback;
+    }
+    /** @internal */
+    inPendingSyncState() {
+        return !this.joinRef || this.joinRef !== this.channel._joinRef();
     }
 }
-exports["default"] = RealtimeSubscription;
-//# sourceMappingURL=RealtimeSubscription.js.map
+exports["default"] = RealtimePresence;
+//# sourceMappingURL=RealtimePresence.js.map
 
 /***/ }),
 
-/***/ 4719:
+/***/ 3960:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -5476,25 +7415,29 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.Transformers = exports.RealtimeSubscription = exports.RealtimeClient = void 0;
-const Transformers = __importStar(__nccwpck_require__(1519));
-exports.Transformers = Transformers;
-const RealtimeClient_1 = __importDefault(__nccwpck_require__(449));
+exports.REALTIME_SUBSCRIBE_STATES = exports.REALTIME_PRESENCE_LISTEN_EVENTS = exports.REALTIME_POSTGRES_CHANGES_LISTEN_EVENT = exports.REALTIME_LISTEN_TYPES = exports.RealtimeClient = exports.RealtimeChannel = exports.RealtimePresence = void 0;
+const RealtimeClient_1 = __importDefault(__nccwpck_require__(8429));
 exports.RealtimeClient = RealtimeClient_1.default;
-const RealtimeSubscription_1 = __importDefault(__nccwpck_require__(6199));
-exports.RealtimeSubscription = RealtimeSubscription_1.default;
+const RealtimeChannel_1 = __importStar(__nccwpck_require__(6947));
+exports.RealtimeChannel = RealtimeChannel_1.default;
+Object.defineProperty(exports, "REALTIME_LISTEN_TYPES", ({ enumerable: true, get: function () { return RealtimeChannel_1.REALTIME_LISTEN_TYPES; } }));
+Object.defineProperty(exports, "REALTIME_POSTGRES_CHANGES_LISTEN_EVENT", ({ enumerable: true, get: function () { return RealtimeChannel_1.REALTIME_POSTGRES_CHANGES_LISTEN_EVENT; } }));
+Object.defineProperty(exports, "REALTIME_SUBSCRIBE_STATES", ({ enumerable: true, get: function () { return RealtimeChannel_1.REALTIME_SUBSCRIBE_STATES; } }));
+const RealtimePresence_1 = __importStar(__nccwpck_require__(7940));
+exports.RealtimePresence = RealtimePresence_1.default;
+Object.defineProperty(exports, "REALTIME_PRESENCE_LISTEN_EVENTS", ({ enumerable: true, get: function () { return RealtimePresence_1.REALTIME_PRESENCE_LISTEN_EVENTS; } }));
 //# sourceMappingURL=index.js.map
 
 /***/ }),
 
-/***/ 9149:
+/***/ 6076:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.CONNECTION_STATE = exports.TRANSPORTS = exports.CHANNEL_EVENTS = exports.CHANNEL_STATES = exports.SOCKET_STATES = exports.WS_CLOSE_NORMAL = exports.DEFAULT_TIMEOUT = exports.VSN = exports.DEFAULT_HEADERS = void 0;
-const version_1 = __nccwpck_require__(6355);
+const version_1 = __nccwpck_require__(2551);
 exports.DEFAULT_HEADERS = { 'X-Client-Info': `realtime-js/${version_1.version}` };
 exports.VSN = '1.0.0';
 exports.DEFAULT_TIMEOUT = 10000;
@@ -5538,13 +7481,13 @@ var CONNECTION_STATE;
 
 /***/ }),
 
-/***/ 2987:
+/***/ 8421:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const constants_1 = __nccwpck_require__(9149);
+const constants_1 = __nccwpck_require__(6076);
 class Push {
     /**
      * Initializes the Push
@@ -5565,6 +7508,7 @@ class Push {
         this.receivedResp = null;
         this.recHooks = [];
         this.refEvent = null;
+        this.rateLimited = false;
     }
     resend(timeout) {
         this.timeout = timeout;
@@ -5581,12 +7525,16 @@ class Push {
         }
         this.startTimeout();
         this.sent = true;
-        this.channel.socket.push({
+        const status = this.channel.socket.push({
             topic: this.channel.topic,
             event: this.event,
             payload: this.payload,
             ref: this.ref,
+            join_ref: this.channel._joinRef(),
         });
+        if (status === 'rate limited') {
+            this.rateLimited = true;
+        }
     }
     updatePayload(payload) {
         this.payload = Object.assign(Object.assign({}, this.payload), payload);
@@ -5603,22 +7551,22 @@ class Push {
         if (this.timeoutTimer) {
             return;
         }
-        this.ref = this.channel.socket.makeRef();
-        this.refEvent = this.channel.replyEventName(this.ref);
+        this.ref = this.channel.socket._makeRef();
+        this.refEvent = this.channel._replyEventName(this.ref);
         const callback = (payload) => {
             this._cancelRefEvent();
             this._cancelTimeout();
             this.receivedResp = payload;
             this._matchReceive(payload);
         };
-        this.channel.on(this.refEvent, callback);
+        this.channel._on(this.refEvent, {}, callback);
         this.timeoutTimer = setTimeout(() => {
             this.trigger('timeout', {});
         }, this.timeout);
     }
     trigger(status, response) {
         if (this.refEvent)
-            this.channel.trigger(this.refEvent, { status, response });
+            this.channel._trigger(this.refEvent, { status, response });
     }
     destroy() {
         this._cancelRefEvent();
@@ -5628,7 +7576,7 @@ class Push {
         if (!this.refEvent) {
             return;
         }
-        this.channel.off(this.refEvent);
+        this.channel._off(this.refEvent, {});
     }
     _cancelTimeout() {
         clearTimeout(this.timeoutTimer);
@@ -5648,7 +7596,7 @@ exports["default"] = Push;
 
 /***/ }),
 
-/***/ 9028:
+/***/ 4964:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -5691,7 +7639,7 @@ exports["default"] = Serializer;
 
 /***/ }),
 
-/***/ 1966:
+/***/ 8658:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -5736,7 +7684,7 @@ exports["default"] = Timer;
 
 /***/ }),
 
-/***/ 1519:
+/***/ 1462:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -5787,14 +7735,15 @@ var PostgresTypes;
  * @example convertChangeData([{name: 'first_name', type: 'text'}, {name: 'age', type: 'int4'}], {first_name: 'Paul', age:'33'}, {})
  * //=>{ first_name: 'Paul', age: 33 }
  */
-exports.convertChangeData = (columns, record, options = {}) => {
+const convertChangeData = (columns, record, options = {}) => {
     var _a;
     const skipTypes = (_a = options.skipTypes) !== null && _a !== void 0 ? _a : [];
     return Object.keys(record).reduce((acc, rec_key) => {
-        acc[rec_key] = exports.convertColumn(rec_key, columns, record, skipTypes);
+        acc[rec_key] = (0, exports.convertColumn)(rec_key, columns, record, skipTypes);
         return acc;
     }, {});
 };
+exports.convertChangeData = convertChangeData;
 /**
  * Converts the value of an individual column.
  *
@@ -5809,20 +7758,21 @@ exports.convertChangeData = (columns, record, options = {}) => {
  * @example convertColumn('age', [{name: 'first_name', type: 'text'}, {name: 'age', type: 'int4'}], {first_name: 'Paul', age: '33'}, ['int4'])
  * //=> "33"
  */
-exports.convertColumn = (columnName, columns, record, skipTypes) => {
+const convertColumn = (columnName, columns, record, skipTypes) => {
     const column = columns.find((x) => x.name === columnName);
     const colType = column === null || column === void 0 ? void 0 : column.type;
     const value = record[columnName];
     if (colType && !skipTypes.includes(colType)) {
-        return exports.convertCell(colType, value);
+        return (0, exports.convertCell)(colType, value);
     }
     return noop(value);
 };
+exports.convertColumn = convertColumn;
 /**
  * If the value of the cell is `null`, returns null.
  * Otherwise converts the string value to the correct type.
  * @param {String} type A postgres column type
- * @param {String} stringValue The cell value
+ * @param {String} value The cell value
  *
  * @example convertCell('bool', 't')
  * //=> true
@@ -5831,16 +7781,16 @@ exports.convertColumn = (columnName, columns, record, skipTypes) => {
  * @example convertCell('_int4', '{1,2,3,4}')
  * //=> [1,2,3,4]
  */
-exports.convertCell = (type, value) => {
+const convertCell = (type, value) => {
     // if data type is an array
     if (type.charAt(0) === '_') {
         const dataType = type.slice(1, type.length);
-        return exports.toArray(value, dataType);
+        return (0, exports.toArray)(value, dataType);
     }
     // If not null, convert to correct type.
     switch (type) {
         case PostgresTypes.bool:
-            return exports.toBoolean(value);
+            return (0, exports.toBoolean)(value);
         case PostgresTypes.float4:
         case PostgresTypes.float8:
         case PostgresTypes.int2:
@@ -5848,12 +7798,12 @@ exports.convertCell = (type, value) => {
         case PostgresTypes.int8:
         case PostgresTypes.numeric:
         case PostgresTypes.oid:
-            return exports.toNumber(value);
+            return (0, exports.toNumber)(value);
         case PostgresTypes.json:
         case PostgresTypes.jsonb:
-            return exports.toJson(value);
+            return (0, exports.toJson)(value);
         case PostgresTypes.timestamp:
-            return exports.toTimestampString(value); // Format to be consistent with PostgREST
+            return (0, exports.toTimestampString)(value); // Format to be consistent with PostgREST
         case PostgresTypes.abstime: // To allow users to cast it based on Timezone
         case PostgresTypes.date: // To allow users to cast it based on Timezone
         case PostgresTypes.daterange:
@@ -5873,10 +7823,11 @@ exports.convertCell = (type, value) => {
             return noop(value);
     }
 };
+exports.convertCell = convertCell;
 const noop = (value) => {
     return value;
 };
-exports.toBoolean = (value) => {
+const toBoolean = (value) => {
     switch (value) {
         case 't':
             return true;
@@ -5886,7 +7837,8 @@ exports.toBoolean = (value) => {
             return value;
     }
 };
-exports.toNumber = (value) => {
+exports.toBoolean = toBoolean;
+const toNumber = (value) => {
     if (typeof value === 'string') {
         const parsedValue = parseFloat(value);
         if (!Number.isNaN(parsedValue)) {
@@ -5895,7 +7847,8 @@ exports.toNumber = (value) => {
     }
     return value;
 };
-exports.toJson = (value) => {
+exports.toNumber = toNumber;
+const toJson = (value) => {
     if (typeof value === 'string') {
         try {
             return JSON.parse(value);
@@ -5907,6 +7860,7 @@ exports.toJson = (value) => {
     }
     return value;
 };
+exports.toJson = toJson;
 /**
  * Converts a Postgres Array into a native JS array
  *
@@ -5917,7 +7871,7 @@ exports.toJson = (value) => {
  * @example toArray([1,2,3,4], 'int4')
  * //=> [1,2,3,4]
  */
-exports.toArray = (value, type) => {
+const toArray = (value, type) => {
     if (typeof value !== 'string') {
         return value;
     }
@@ -5936,10 +7890,11 @@ exports.toArray = (value, type) => {
             // WARNING: splitting on comma does not cover all edge cases
             arr = valTrim ? valTrim.split(',') : [];
         }
-        return arr.map((val) => exports.convertCell(type, val));
+        return arr.map((val) => (0, exports.convertCell)(type, val));
     }
     return value;
 };
+exports.toArray = toArray;
 /**
  * Fixes timestamp to be ISO-8601. Swaps the space between the date and time for a 'T'
  * See https://github.com/supabase/supabase/issues/18
@@ -5947,37 +7902,42 @@ exports.toArray = (value, type) => {
  * @example toTimestampString('2019-09-10 00:00:00')
  * //=> '2019-09-10T00:00:00'
  */
-exports.toTimestampString = (value) => {
+const toTimestampString = (value) => {
     if (typeof value === 'string') {
         return value.replace(' ', 'T');
     }
     return value;
 };
+exports.toTimestampString = toTimestampString;
 //# sourceMappingURL=transformers.js.map
 
 /***/ }),
 
-/***/ 6355:
+/***/ 2551:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.version = void 0;
-exports.version = '1.7.4';
+exports.version = '2.7.3';
 //# sourceMappingURL=version.js.map
 
 /***/ }),
 
-/***/ 5169:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ 4725:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.StorageClient = void 0;
-const lib_1 = __nccwpck_require__(7196);
-class StorageClient extends lib_1.StorageBucketApi {
+const StorageFileApi_1 = __importDefault(__nccwpck_require__(6620));
+const StorageBucketApi_1 = __importDefault(__nccwpck_require__(7201));
+class StorageClient extends StorageBucketApi_1.default {
     constructor(url, headers = {}, fetch) {
         super(url, headers, fetch);
     }
@@ -5987,7 +7947,7 @@ class StorageClient extends lib_1.StorageBucketApi {
      * @param id The bucket id to operate on.
      */
     from(id) {
-        return new lib_1.StorageFileApi(this.url, this.headers, id, this.fetch);
+        return new StorageFileApi_1.default(this.url, this.headers, id, this.fetch);
     }
 }
 exports.StorageClient = StorageClient;
@@ -5995,14 +7955,18 @@ exports.StorageClient = StorageClient;
 
 /***/ }),
 
-/***/ 9092:
+/***/ 7319:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -6011,463 +7975,76 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.SupabaseStorageClient = exports.StorageClient = void 0;
-var StorageClient_1 = __nccwpck_require__(5169);
+exports.StorageClient = void 0;
+var StorageClient_1 = __nccwpck_require__(4725);
 Object.defineProperty(exports, "StorageClient", ({ enumerable: true, get: function () { return StorageClient_1.StorageClient; } }));
-Object.defineProperty(exports, "SupabaseStorageClient", ({ enumerable: true, get: function () { return StorageClient_1.StorageClient; } }));
-__exportStar(__nccwpck_require__(1847), exports);
+__exportStar(__nccwpck_require__(1841), exports);
+__exportStar(__nccwpck_require__(6033), exports);
 //# sourceMappingURL=index.js.map
 
 /***/ }),
 
-/***/ 7279:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.StorageBucketApi = void 0;
-const constants_1 = __nccwpck_require__(7092);
-const fetch_1 = __nccwpck_require__(3103);
-const helpers_1 = __nccwpck_require__(8095);
-class StorageBucketApi {
-    constructor(url, headers = {}, fetch) {
-        this.url = url;
-        this.headers = Object.assign(Object.assign({}, constants_1.DEFAULT_HEADERS), headers);
-        this.fetch = helpers_1.resolveFetch(fetch);
-    }
-    /**
-     * Retrieves the details of all Storage buckets within an existing project.
-     */
-    listBuckets() {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const data = yield fetch_1.get(this.fetch, `${this.url}/bucket`, { headers: this.headers });
-                return { data, error: null };
-            }
-            catch (error) {
-                return { data: null, error };
-            }
-        });
-    }
-    /**
-     * Retrieves the details of an existing Storage bucket.
-     *
-     * @param id The unique identifier of the bucket you would like to retrieve.
-     */
-    getBucket(id) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const data = yield fetch_1.get(this.fetch, `${this.url}/bucket/${id}`, { headers: this.headers });
-                return { data, error: null };
-            }
-            catch (error) {
-                return { data: null, error };
-            }
-        });
-    }
-    /**
-     * Creates a new Storage bucket
-     *
-     * @param id A unique identifier for the bucket you are creating.
-     * @returns newly created bucket id
-     */
-    createBucket(id, options = { public: false }) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const data = yield fetch_1.post(this.fetch, `${this.url}/bucket`, { id, name: id, public: options.public }, { headers: this.headers });
-                return { data: data.name, error: null };
-            }
-            catch (error) {
-                return { data: null, error };
-            }
-        });
-    }
-    /**
-     * Updates a new Storage bucket
-     *
-     * @param id A unique identifier for the bucket you are updating.
-     */
-    updateBucket(id, options) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const data = yield fetch_1.put(this.fetch, `${this.url}/bucket/${id}`, { id, name: id, public: options.public }, { headers: this.headers });
-                return { data, error: null };
-            }
-            catch (error) {
-                return { data: null, error };
-            }
-        });
-    }
-    /**
-     * Removes all objects inside a single bucket.
-     *
-     * @param id The unique identifier of the bucket you would like to empty.
-     */
-    emptyBucket(id) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const data = yield fetch_1.post(this.fetch, `${this.url}/bucket/${id}/empty`, {}, { headers: this.headers });
-                return { data, error: null };
-            }
-            catch (error) {
-                return { data: null, error };
-            }
-        });
-    }
-    /**
-     * Deletes an existing bucket. A bucket can't be deleted with existing objects inside it.
-     * You must first `empty()` the bucket.
-     *
-     * @param id The unique identifier of the bucket you would like to delete.
-     */
-    deleteBucket(id) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const data = yield fetch_1.remove(this.fetch, `${this.url}/bucket/${id}`, {}, { headers: this.headers });
-                return { data, error: null };
-            }
-            catch (error) {
-                return { data: null, error };
-            }
-        });
-    }
-}
-exports.StorageBucketApi = StorageBucketApi;
-//# sourceMappingURL=StorageBucketApi.js.map
-
-/***/ }),
-
-/***/ 3575:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.StorageFileApi = void 0;
-const fetch_1 = __nccwpck_require__(3103);
-const helpers_1 = __nccwpck_require__(8095);
-const DEFAULT_SEARCH_OPTIONS = {
-    limit: 100,
-    offset: 0,
-    sortBy: {
-        column: 'name',
-        order: 'asc',
-    },
-};
-const DEFAULT_FILE_OPTIONS = {
-    cacheControl: '3600',
-    contentType: 'text/plain;charset=UTF-8',
-    upsert: false,
-};
-class StorageFileApi {
-    constructor(url, headers = {}, bucketId, fetch) {
-        this.url = url;
-        this.headers = headers;
-        this.bucketId = bucketId;
-        this.fetch = helpers_1.resolveFetch(fetch);
-    }
-    /**
-     * Uploads a file to an existing bucket or replaces an existing file at the specified path with a new one.
-     *
-     * @param method HTTP method.
-     * @param path The relative file path. Should be of the format `folder/subfolder/filename.png`. The bucket must already exist before attempting to upload.
-     * @param fileBody The body of the file to be stored in the bucket.
-     * @param fileOptions HTTP headers.
-     * `cacheControl`: string, the `Cache-Control: max-age=<seconds>` seconds value.
-     * `contentType`: string, the `Content-Type` header value. Should be specified if using a `fileBody` that is neither `Blob` nor `File` nor `FormData`, otherwise will default to `text/plain;charset=UTF-8`.
-     * `upsert`: boolean, whether to perform an upsert.
-     */
-    uploadOrUpdate(method, path, fileBody, fileOptions) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                let body;
-                const options = Object.assign(Object.assign({}, DEFAULT_FILE_OPTIONS), fileOptions);
-                const headers = Object.assign(Object.assign({}, this.headers), (method === 'POST' && { 'x-upsert': String(options.upsert) }));
-                if (typeof Blob !== 'undefined' && fileBody instanceof Blob) {
-                    body = new FormData();
-                    body.append('cacheControl', options.cacheControl);
-                    body.append('', fileBody);
-                }
-                else if (typeof FormData !== 'undefined' && fileBody instanceof FormData) {
-                    body = fileBody;
-                    body.append('cacheControl', options.cacheControl);
-                }
-                else {
-                    body = fileBody;
-                    headers['cache-control'] = `max-age=${options.cacheControl}`;
-                    headers['content-type'] = options.contentType;
-                }
-                const cleanPath = this._removeEmptyFolders(path);
-                const _path = this._getFinalPath(cleanPath);
-                const res = yield this.fetch(`${this.url}/object/${_path}`, {
-                    method,
-                    body: body,
-                    headers,
-                });
-                if (res.ok) {
-                    // const data = await res.json()
-                    // temporary fix till backend is updated to the latest storage-api version
-                    return { data: { Key: _path }, error: null };
-                }
-                else {
-                    const error = yield res.json();
-                    return { data: null, error };
-                }
-            }
-            catch (error) {
-                return { data: null, error };
-            }
-        });
-    }
-    /**
-     * Uploads a file to an existing bucket.
-     *
-     * @param path The relative file path. Should be of the format `folder/subfolder/filename.png`. The bucket must already exist before attempting to upload.
-     * @param fileBody The body of the file to be stored in the bucket.
-     * @param fileOptions HTTP headers.
-     * `cacheControl`: string, the `Cache-Control: max-age=<seconds>` seconds value.
-     * `contentType`: string, the `Content-Type` header value. Should be specified if using a `fileBody` that is neither `Blob` nor `File` nor `FormData`, otherwise will default to `text/plain;charset=UTF-8`.
-     * `upsert`: boolean, whether to perform an upsert.
-     */
-    upload(path, fileBody, fileOptions) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return this.uploadOrUpdate('POST', path, fileBody, fileOptions);
-        });
-    }
-    /**
-     * Replaces an existing file at the specified path with a new one.
-     *
-     * @param path The relative file path. Should be of the format `folder/subfolder/filename.png`. The bucket must already exist before attempting to upload.
-     * @param fileBody The body of the file to be stored in the bucket.
-     * @param fileOptions HTTP headers.
-     * `cacheControl`: string, the `Cache-Control: max-age=<seconds>` seconds value.
-     * `contentType`: string, the `Content-Type` header value. Should be specified if using a `fileBody` that is neither `Blob` nor `File` nor `FormData`, otherwise will default to `text/plain;charset=UTF-8`.
-     * `upsert`: boolean, whether to perform an upsert.
-     */
-    update(path, fileBody, fileOptions) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return this.uploadOrUpdate('PUT', path, fileBody, fileOptions);
-        });
-    }
-    /**
-     * Moves an existing file.
-     *
-     * @param fromPath The original file path, including the current file name. For example `folder/image.png`.
-     * @param toPath The new file path, including the new file name. For example `folder/image-new.png`.
-     */
-    move(fromPath, toPath) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const data = yield fetch_1.post(this.fetch, `${this.url}/object/move`, { bucketId: this.bucketId, sourceKey: fromPath, destinationKey: toPath }, { headers: this.headers });
-                return { data, error: null };
-            }
-            catch (error) {
-                return { data: null, error };
-            }
-        });
-    }
-    /**
-     * Copies an existing file.
-     *
-     * @param fromPath The original file path, including the current file name. For example `folder/image.png`.
-     * @param toPath The new file path, including the new file name. For example `folder/image-copy.png`.
-     */
-    copy(fromPath, toPath) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const data = yield fetch_1.post(this.fetch, `${this.url}/object/copy`, { bucketId: this.bucketId, sourceKey: fromPath, destinationKey: toPath }, { headers: this.headers });
-                return { data, error: null };
-            }
-            catch (error) {
-                return { data: null, error };
-            }
-        });
-    }
-    /**
-     * Create signed URL to download file without requiring permissions. This URL can be valid for a set number of seconds.
-     *
-     * @param path The file path to be downloaded, including the current file name. For example `folder/image.png`.
-     * @param expiresIn The number of seconds until the signed URL expires. For example, `60` for a URL which is valid for one minute.
-     */
-    createSignedUrl(path, expiresIn) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const _path = this._getFinalPath(path);
-                let data = yield fetch_1.post(this.fetch, `${this.url}/object/sign/${_path}`, { expiresIn }, { headers: this.headers });
-                const signedURL = `${this.url}${data.signedURL}`;
-                data = { signedURL };
-                return { data, error: null, signedURL };
-            }
-            catch (error) {
-                return { data: null, error, signedURL: null };
-            }
-        });
-    }
-    /**
-     * Create signed URLs to download files without requiring permissions. These URLs can be valid for a set number of seconds.
-     *
-     * @param paths The file paths to be downloaded, including the current file names. For example `['folder/image.png', 'folder2/image2.png']`.
-     * @param expiresIn The number of seconds until the signed URLs expire. For example, `60` for URLs which are valid for one minute.
-     */
-    createSignedUrls(paths, expiresIn) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const data = yield fetch_1.post(this.fetch, `${this.url}/object/sign/${this.bucketId}`, { expiresIn, paths }, { headers: this.headers });
-                return {
-                    data: data.map((datum) => (Object.assign(Object.assign({}, datum), { signedURL: datum.signedURL ? `${this.url}${datum.signedURL}` : null }))),
-                    error: null,
-                };
-            }
-            catch (error) {
-                return { data: null, error };
-            }
-        });
-    }
-    /**
-     * Downloads a file.
-     *
-     * @param path The file path to be downloaded, including the path and file name. For example `folder/image.png`.
-     */
-    download(path) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const _path = this._getFinalPath(path);
-                const res = yield fetch_1.get(this.fetch, `${this.url}/object/${_path}`, {
-                    headers: this.headers,
-                    noResolveJson: true,
-                });
-                const data = yield res.blob();
-                return { data, error: null };
-            }
-            catch (error) {
-                return { data: null, error };
-            }
-        });
-    }
-    /**
-     * Retrieve URLs for assets in public buckets
-     *
-     * @param path The file path to be downloaded, including the path and file name. For example `folder/image.png`.
-     */
-    getPublicUrl(path) {
-        try {
-            const _path = this._getFinalPath(path);
-            const publicURL = `${this.url}/object/public/${_path}`;
-            const data = { publicURL };
-            return { data, error: null, publicURL };
-        }
-        catch (error) {
-            return { data: null, error, publicURL: null };
-        }
-    }
-    /**
-     * Deletes files within the same bucket
-     *
-     * @param paths An array of files to be deleted, including the path and file name. For example [`folder/image.png`].
-     */
-    remove(paths) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const data = yield fetch_1.remove(this.fetch, `${this.url}/object/${this.bucketId}`, { prefixes: paths }, { headers: this.headers });
-                return { data, error: null };
-            }
-            catch (error) {
-                return { data: null, error };
-            }
-        });
-    }
-    /**
-     * Get file metadata
-     * @param id the file id to retrieve metadata
-     */
-    // async getMetadata(id: string): Promise<{ data: Metadata | null; error: Error | null }> {
-    //   try {
-    //     const data = await get(`${this.url}/metadata/${id}`, { headers: this.headers })
-    //     return { data, error: null }
-    //   } catch (error) {
-    //     return { data: null, error }
-    //   }
-    // }
-    /**
-     * Update file metadata
-     * @param id the file id to update metadata
-     * @param meta the new file metadata
-     */
-    // async updateMetadata(
-    //   id: string,
-    //   meta: Metadata
-    // ): Promise<{ data: Metadata | null; error: Error | null }> {
-    //   try {
-    //     const data = await post(`${this.url}/metadata/${id}`, { ...meta }, { headers: this.headers })
-    //     return { data, error: null }
-    //   } catch (error) {
-    //     return { data: null, error }
-    //   }
-    // }
-    /**
-     * Lists all the files within a bucket.
-     * @param path The folder path.
-     * @param options Search options, including `limit`, `offset`, `sortBy`, and `search`.
-     * @param parameters Fetch parameters, currently only supports `signal`, which is an AbortController's signal
-     */
-    list(path, options, parameters) {
-        return __awaiter(this, void 0, void 0, function* () {
-            try {
-                const body = Object.assign(Object.assign(Object.assign({}, DEFAULT_SEARCH_OPTIONS), options), { prefix: path || '' });
-                const data = yield fetch_1.post(this.fetch, `${this.url}/object/list/${this.bucketId}`, body, { headers: this.headers }, parameters);
-                return { data, error: null };
-            }
-            catch (error) {
-                return { data: null, error };
-            }
-        });
-    }
-    _getFinalPath(path) {
-        return `${this.bucketId}/${path}`;
-    }
-    _removeEmptyFolders(path) {
-        return path.replace(/^\/|\/$/g, '').replace(/\/+/g, '/');
-    }
-}
-exports.StorageFileApi = StorageFileApi;
-//# sourceMappingURL=StorageFileApi.js.map
-
-/***/ }),
-
-/***/ 7092:
+/***/ 190:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.DEFAULT_HEADERS = void 0;
-const version_1 = __nccwpck_require__(5592);
+const version_1 = __nccwpck_require__(3544);
 exports.DEFAULT_HEADERS = { 'X-Client-Info': `storage-js/${version_1.version}` };
 //# sourceMappingURL=constants.js.map
 
 /***/ }),
 
-/***/ 3103:
-/***/ (function(__unused_webpack_module, exports) {
+/***/ 6033:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.StorageUnknownError = exports.StorageApiError = exports.isStorageError = exports.StorageError = void 0;
+class StorageError extends Error {
+    constructor(message) {
+        super(message);
+        this.__isStorageError = true;
+        this.name = 'StorageError';
+    }
+}
+exports.StorageError = StorageError;
+function isStorageError(error) {
+    return typeof error === 'object' && error !== null && '__isStorageError' in error;
+}
+exports.isStorageError = isStorageError;
+class StorageApiError extends StorageError {
+    constructor(message, status) {
+        super(message);
+        this.name = 'StorageApiError';
+        this.status = status;
+    }
+    toJSON() {
+        return {
+            name: this.name,
+            message: this.message,
+            status: this.status,
+        };
+    }
+}
+exports.StorageApiError = StorageApiError;
+class StorageUnknownError extends StorageError {
+    constructor(message, originalError) {
+        super(message);
+        this.name = 'StorageUnknownError';
+        this.originalError = originalError;
+    }
+}
+exports.StorageUnknownError = StorageUnknownError;
+//# sourceMappingURL=errors.js.map
+
+/***/ }),
+
+/***/ 7656:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
@@ -6482,18 +8059,25 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.remove = exports.put = exports.post = exports.get = void 0;
+const errors_1 = __nccwpck_require__(6033);
+const helpers_1 = __nccwpck_require__(2410);
 const _getErrorMessage = (err) => err.msg || err.message || err.error_description || err.error || JSON.stringify(err);
-const handleError = (error, reject) => {
-    if (typeof error.json !== 'function') {
-        return reject(error);
-    }
-    error.json().then((err) => {
-        return reject({
-            message: _getErrorMessage(err),
-            status: (error === null || error === void 0 ? void 0 : error.status) || 500,
+const handleError = (error, reject) => __awaiter(void 0, void 0, void 0, function* () {
+    const Res = yield (0, helpers_1.resolveResponse)();
+    if (error instanceof Res) {
+        error
+            .json()
+            .then((err) => {
+            reject(new errors_1.StorageApiError(_getErrorMessage(err), error.status || 500));
+        })
+            .catch((err) => {
+            reject(new errors_1.StorageUnknownError(_getErrorMessage(err), err));
         });
-    });
-};
+    }
+    else {
+        reject(new errors_1.StorageUnknownError(_getErrorMessage(error), error));
+    }
+});
 const _getRequestParams = (method, options, parameters, body) => {
     const params = { method, headers: (options === null || options === void 0 ? void 0 : options.headers) || {} };
     if (method === 'GET') {
@@ -6511,7 +8095,7 @@ function _handleRequest(fetcher, method, url, options, parameters, body) {
                 if (!result.ok)
                     throw result;
                 if (options === null || options === void 0 ? void 0 : options.noResolveJson)
-                    return resolve(result);
+                    return result;
                 return result.json();
             })
                 .then((data) => resolve(data))
@@ -6547,14 +8131,18 @@ exports.remove = remove;
 
 /***/ }),
 
-/***/ 8095:
+/***/ 2410:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
 
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
 }) : (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
@@ -6581,49 +8169,33 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.resolveFetch = void 0;
-exports.resolveFetch = (customFetch) => {
+exports.resolveResponse = exports.resolveFetch = void 0;
+const resolveFetch = (customFetch) => {
     let _fetch;
     if (customFetch) {
         _fetch = customFetch;
     }
     else if (typeof fetch === 'undefined') {
-        _fetch = (...args) => __awaiter(void 0, void 0, void 0, function* () { return yield (yield Promise.resolve().then(() => __importStar(__nccwpck_require__(8624)))).fetch(...args); });
+        _fetch = (...args) => __awaiter(void 0, void 0, void 0, function* () { return yield (yield Promise.resolve().then(() => __importStar(__nccwpck_require__(1489)))).fetch(...args); });
     }
     else {
         _fetch = fetch;
     }
     return (...args) => _fetch(...args);
 };
+exports.resolveFetch = resolveFetch;
+const resolveResponse = () => __awaiter(void 0, void 0, void 0, function* () {
+    if (typeof Response === 'undefined') {
+        return (yield Promise.resolve().then(() => __importStar(__nccwpck_require__(1489)))).Response;
+    }
+    return Response;
+});
+exports.resolveResponse = resolveResponse;
 //# sourceMappingURL=helpers.js.map
 
 /***/ }),
 
-/***/ 7196:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __exportStar = (this && this.__exportStar) || function(m, exports) {
-    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-__exportStar(__nccwpck_require__(7279), exports);
-__exportStar(__nccwpck_require__(3575), exports);
-__exportStar(__nccwpck_require__(1847), exports);
-__exportStar(__nccwpck_require__(7092), exports);
-//# sourceMappingURL=index.js.map
-
-/***/ }),
-
-/***/ 1847:
+/***/ 1841:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -6633,7 +8205,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 
 /***/ }),
 
-/***/ 5592:
+/***/ 3544:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -6641,12 +8213,12 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.version = void 0;
 // generated by genversion
-exports.version = '1.7.3';
+exports.version = '2.5.1';
 //# sourceMappingURL=version.js.map
 
 /***/ }),
 
-/***/ 2264:
+/***/ 7201:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -6661,22 +8233,674 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const constants_1 = __nccwpck_require__(2324);
-const helpers_1 = __nccwpck_require__(9398);
-const SupabaseAuthClient_1 = __nccwpck_require__(1866);
-const SupabaseQueryBuilder_1 = __nccwpck_require__(8342);
-const storage_js_1 = __nccwpck_require__(9092);
-const functions_js_1 = __nccwpck_require__(2271);
-const postgrest_js_1 = __nccwpck_require__(3956);
-const realtime_js_1 = __nccwpck_require__(4719);
-const DEFAULT_OPTIONS = {
+const constants_1 = __nccwpck_require__(190);
+const errors_1 = __nccwpck_require__(6033);
+const fetch_1 = __nccwpck_require__(7656);
+const helpers_1 = __nccwpck_require__(2410);
+class StorageBucketApi {
+    constructor(url, headers = {}, fetch) {
+        this.url = url;
+        this.headers = Object.assign(Object.assign({}, constants_1.DEFAULT_HEADERS), headers);
+        this.fetch = (0, helpers_1.resolveFetch)(fetch);
+    }
+    /**
+     * Retrieves the details of all Storage buckets within an existing project.
+     */
+    listBuckets() {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const data = yield (0, fetch_1.get)(this.fetch, `${this.url}/bucket`, { headers: this.headers });
+                return { data, error: null };
+            }
+            catch (error) {
+                if ((0, errors_1.isStorageError)(error)) {
+                    return { data: null, error };
+                }
+                throw error;
+            }
+        });
+    }
+    /**
+     * Retrieves the details of an existing Storage bucket.
+     *
+     * @param id The unique identifier of the bucket you would like to retrieve.
+     */
+    getBucket(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const data = yield (0, fetch_1.get)(this.fetch, `${this.url}/bucket/${id}`, { headers: this.headers });
+                return { data, error: null };
+            }
+            catch (error) {
+                if ((0, errors_1.isStorageError)(error)) {
+                    return { data: null, error };
+                }
+                throw error;
+            }
+        });
+    }
+    /**
+     * Creates a new Storage bucket
+     *
+     * @param id A unique identifier for the bucket you are creating.
+     * @param options.public The visibility of the bucket. Public buckets don't require an authorization token to download objects, but still require a valid token for all other operations. By default, buckets are private.
+     * @param options.fileSizeLimit specifies the max file size in bytes that can be uploaded to this bucket.
+     * The global file size limit takes precedence over this value.
+     * The default value is null, which doesn't set a per bucket file size limit.
+     * @param options.allowedMimeTypes specifies the allowed mime types that this bucket can accept during upload.
+     * The default value is null, which allows files with all mime types to be uploaded.
+     * Each mime type specified can be a wildcard, e.g. image/*, or a specific mime type, e.g. image/png.
+     * @returns newly created bucket id
+     */
+    createBucket(id, options = {
+        public: false,
+    }) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const data = yield (0, fetch_1.post)(this.fetch, `${this.url}/bucket`, {
+                    id,
+                    name: id,
+                    public: options.public,
+                    file_size_limit: options.fileSizeLimit,
+                    allowed_mime_types: options.allowedMimeTypes,
+                }, { headers: this.headers });
+                return { data, error: null };
+            }
+            catch (error) {
+                if ((0, errors_1.isStorageError)(error)) {
+                    return { data: null, error };
+                }
+                throw error;
+            }
+        });
+    }
+    /**
+     * Updates a Storage bucket
+     *
+     * @param id A unique identifier for the bucket you are updating.
+     * @param options.public The visibility of the bucket. Public buckets don't require an authorization token to download objects, but still require a valid token for all other operations.
+     * @param options.fileSizeLimit specifies the max file size in bytes that can be uploaded to this bucket.
+     * The global file size limit takes precedence over this value.
+     * The default value is null, which doesn't set a per bucket file size limit.
+     * @param options.allowedMimeTypes specifies the allowed mime types that this bucket can accept during upload.
+     * The default value is null, which allows files with all mime types to be uploaded.
+     * Each mime type specified can be a wildcard, e.g. image/*, or a specific mime type, e.g. image/png.
+     */
+    updateBucket(id, options) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const data = yield (0, fetch_1.put)(this.fetch, `${this.url}/bucket/${id}`, {
+                    id,
+                    name: id,
+                    public: options.public,
+                    file_size_limit: options.fileSizeLimit,
+                    allowed_mime_types: options.allowedMimeTypes,
+                }, { headers: this.headers });
+                return { data, error: null };
+            }
+            catch (error) {
+                if ((0, errors_1.isStorageError)(error)) {
+                    return { data: null, error };
+                }
+                throw error;
+            }
+        });
+    }
+    /**
+     * Removes all objects inside a single bucket.
+     *
+     * @param id The unique identifier of the bucket you would like to empty.
+     */
+    emptyBucket(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const data = yield (0, fetch_1.post)(this.fetch, `${this.url}/bucket/${id}/empty`, {}, { headers: this.headers });
+                return { data, error: null };
+            }
+            catch (error) {
+                if ((0, errors_1.isStorageError)(error)) {
+                    return { data: null, error };
+                }
+                throw error;
+            }
+        });
+    }
+    /**
+     * Deletes an existing bucket. A bucket can't be deleted with existing objects inside it.
+     * You must first `empty()` the bucket.
+     *
+     * @param id The unique identifier of the bucket you would like to delete.
+     */
+    deleteBucket(id) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const data = yield (0, fetch_1.remove)(this.fetch, `${this.url}/bucket/${id}`, {}, { headers: this.headers });
+                return { data, error: null };
+            }
+            catch (error) {
+                if ((0, errors_1.isStorageError)(error)) {
+                    return { data: null, error };
+                }
+                throw error;
+            }
+        });
+    }
+}
+exports["default"] = StorageBucketApi;
+//# sourceMappingURL=StorageBucketApi.js.map
+
+/***/ }),
+
+/***/ 6620:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const errors_1 = __nccwpck_require__(6033);
+const fetch_1 = __nccwpck_require__(7656);
+const helpers_1 = __nccwpck_require__(2410);
+const DEFAULT_SEARCH_OPTIONS = {
+    limit: 100,
+    offset: 0,
+    sortBy: {
+        column: 'name',
+        order: 'asc',
+    },
+};
+const DEFAULT_FILE_OPTIONS = {
+    cacheControl: '3600',
+    contentType: 'text/plain;charset=UTF-8',
+    upsert: false,
+};
+class StorageFileApi {
+    constructor(url, headers = {}, bucketId, fetch) {
+        this.url = url;
+        this.headers = headers;
+        this.bucketId = bucketId;
+        this.fetch = (0, helpers_1.resolveFetch)(fetch);
+    }
+    /**
+     * Uploads a file to an existing bucket or replaces an existing file at the specified path with a new one.
+     *
+     * @param method HTTP method.
+     * @param path The relative file path. Should be of the format `folder/subfolder/filename.png`. The bucket must already exist before attempting to upload.
+     * @param fileBody The body of the file to be stored in the bucket.
+     */
+    uploadOrUpdate(method, path, fileBody, fileOptions) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                let body;
+                const options = Object.assign(Object.assign({}, DEFAULT_FILE_OPTIONS), fileOptions);
+                const headers = Object.assign(Object.assign({}, this.headers), (method === 'POST' && { 'x-upsert': String(options.upsert) }));
+                if (typeof Blob !== 'undefined' && fileBody instanceof Blob) {
+                    body = new FormData();
+                    body.append('cacheControl', options.cacheControl);
+                    body.append('', fileBody);
+                }
+                else if (typeof FormData !== 'undefined' && fileBody instanceof FormData) {
+                    body = fileBody;
+                    body.append('cacheControl', options.cacheControl);
+                }
+                else {
+                    body = fileBody;
+                    headers['cache-control'] = `max-age=${options.cacheControl}`;
+                    headers['content-type'] = options.contentType;
+                }
+                const cleanPath = this._removeEmptyFolders(path);
+                const _path = this._getFinalPath(cleanPath);
+                const res = yield this.fetch(`${this.url}/object/${_path}`, Object.assign({ method, body: body, headers }, ((options === null || options === void 0 ? void 0 : options.duplex) ? { duplex: options.duplex } : {})));
+                if (res.ok) {
+                    return {
+                        data: { path: cleanPath },
+                        error: null,
+                    };
+                }
+                else {
+                    const error = yield res.json();
+                    return { data: null, error };
+                }
+            }
+            catch (error) {
+                if ((0, errors_1.isStorageError)(error)) {
+                    return { data: null, error };
+                }
+                throw error;
+            }
+        });
+    }
+    /**
+     * Uploads a file to an existing bucket.
+     *
+     * @param path The file path, including the file name. Should be of the format `folder/subfolder/filename.png`. The bucket must already exist before attempting to upload.
+     * @param fileBody The body of the file to be stored in the bucket.
+     */
+    upload(path, fileBody, fileOptions) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return this.uploadOrUpdate('POST', path, fileBody, fileOptions);
+        });
+    }
+    /**
+     * Upload a file with a token generated from `createSignedUploadUrl`.
+     * @param path The file path, including the file name. Should be of the format `folder/subfolder/filename.png`. The bucket must already exist before attempting to upload.
+     * @param token The token generated from `createSignedUploadUrl`
+     * @param fileBody The body of the file to be stored in the bucket.
+     */
+    uploadToSignedUrl(path, token, fileBody, fileOptions) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const cleanPath = this._removeEmptyFolders(path);
+            const _path = this._getFinalPath(cleanPath);
+            const url = new URL(this.url + `/object/upload/sign/${_path}`);
+            url.searchParams.set('token', token);
+            try {
+                let body;
+                const options = Object.assign({ upsert: DEFAULT_FILE_OPTIONS.upsert }, fileOptions);
+                const headers = Object.assign(Object.assign({}, this.headers), { 'x-upsert': String(options.upsert) });
+                if (typeof Blob !== 'undefined' && fileBody instanceof Blob) {
+                    body = new FormData();
+                    body.append('cacheControl', options.cacheControl);
+                    body.append('', fileBody);
+                }
+                else if (typeof FormData !== 'undefined' && fileBody instanceof FormData) {
+                    body = fileBody;
+                    body.append('cacheControl', options.cacheControl);
+                }
+                else {
+                    body = fileBody;
+                    headers['cache-control'] = `max-age=${options.cacheControl}`;
+                    headers['content-type'] = options.contentType;
+                }
+                const res = yield this.fetch(url.toString(), {
+                    method: 'PUT',
+                    body: body,
+                    headers,
+                });
+                if (res.ok) {
+                    return {
+                        data: { path: cleanPath },
+                        error: null,
+                    };
+                }
+                else {
+                    const error = yield res.json();
+                    return { data: null, error };
+                }
+            }
+            catch (error) {
+                if ((0, errors_1.isStorageError)(error)) {
+                    return { data: null, error };
+                }
+                throw error;
+            }
+        });
+    }
+    /**
+     * Creates a signed upload URL.
+     * Signed upload URLs can be used to upload files to the bucket without further authentication.
+     * They are valid for one minute.
+     * @param path The file path, including the current file name. For example `folder/image.png`.
+     */
+    createSignedUploadUrl(path) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                let _path = this._getFinalPath(path);
+                const data = yield (0, fetch_1.post)(this.fetch, `${this.url}/object/upload/sign/${_path}`, {}, { headers: this.headers });
+                const url = new URL(this.url + data.url);
+                const token = url.searchParams.get('token');
+                if (!token) {
+                    throw new errors_1.StorageError('No token returned by API');
+                }
+                return { data: { signedUrl: url.toString(), path, token }, error: null };
+            }
+            catch (error) {
+                if ((0, errors_1.isStorageError)(error)) {
+                    return { data: null, error };
+                }
+                throw error;
+            }
+        });
+    }
+    /**
+     * Replaces an existing file at the specified path with a new one.
+     *
+     * @param path The relative file path. Should be of the format `folder/subfolder/filename.png`. The bucket must already exist before attempting to update.
+     * @param fileBody The body of the file to be stored in the bucket.
+     */
+    update(path, fileBody, fileOptions) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return this.uploadOrUpdate('PUT', path, fileBody, fileOptions);
+        });
+    }
+    /**
+     * Moves an existing file to a new path in the same bucket.
+     *
+     * @param fromPath The original file path, including the current file name. For example `folder/image.png`.
+     * @param toPath The new file path, including the new file name. For example `folder/image-new.png`.
+     */
+    move(fromPath, toPath) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const data = yield (0, fetch_1.post)(this.fetch, `${this.url}/object/move`, { bucketId: this.bucketId, sourceKey: fromPath, destinationKey: toPath }, { headers: this.headers });
+                return { data, error: null };
+            }
+            catch (error) {
+                if ((0, errors_1.isStorageError)(error)) {
+                    return { data: null, error };
+                }
+                throw error;
+            }
+        });
+    }
+    /**
+     * Copies an existing file to a new path in the same bucket.
+     *
+     * @param fromPath The original file path, including the current file name. For example `folder/image.png`.
+     * @param toPath The new file path, including the new file name. For example `folder/image-copy.png`.
+     */
+    copy(fromPath, toPath) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const data = yield (0, fetch_1.post)(this.fetch, `${this.url}/object/copy`, { bucketId: this.bucketId, sourceKey: fromPath, destinationKey: toPath }, { headers: this.headers });
+                return { data: { path: data.Key }, error: null };
+            }
+            catch (error) {
+                if ((0, errors_1.isStorageError)(error)) {
+                    return { data: null, error };
+                }
+                throw error;
+            }
+        });
+    }
+    /**
+     * Creates a signed URL. Use a signed URL to share a file for a fixed amount of time.
+     *
+     * @param path The file path, including the current file name. For example `folder/image.png`.
+     * @param expiresIn The number of seconds until the signed URL expires. For example, `60` for a URL which is valid for one minute.
+     * @param options.download triggers the file as a download if set to true. Set this parameter as the name of the file if you want to trigger the download with a different filename.
+     * @param options.transform Transform the asset before serving it to the client.
+     */
+    createSignedUrl(path, expiresIn, options) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                let _path = this._getFinalPath(path);
+                let data = yield (0, fetch_1.post)(this.fetch, `${this.url}/object/sign/${_path}`, Object.assign({ expiresIn }, ((options === null || options === void 0 ? void 0 : options.transform) ? { transform: options.transform } : {})), { headers: this.headers });
+                const downloadQueryParam = (options === null || options === void 0 ? void 0 : options.download)
+                    ? `&download=${options.download === true ? '' : options.download}`
+                    : '';
+                const signedUrl = encodeURI(`${this.url}${data.signedURL}${downloadQueryParam}`);
+                data = { signedUrl };
+                return { data, error: null };
+            }
+            catch (error) {
+                if ((0, errors_1.isStorageError)(error)) {
+                    return { data: null, error };
+                }
+                throw error;
+            }
+        });
+    }
+    /**
+     * Creates multiple signed URLs. Use a signed URL to share a file for a fixed amount of time.
+     *
+     * @param paths The file paths to be downloaded, including the current file names. For example `['folder/image.png', 'folder2/image2.png']`.
+     * @param expiresIn The number of seconds until the signed URLs expire. For example, `60` for URLs which are valid for one minute.
+     * @param options.download triggers the file as a download if set to true. Set this parameter as the name of the file if you want to trigger the download with a different filename.
+     */
+    createSignedUrls(paths, expiresIn, options) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const data = yield (0, fetch_1.post)(this.fetch, `${this.url}/object/sign/${this.bucketId}`, { expiresIn, paths }, { headers: this.headers });
+                const downloadQueryParam = (options === null || options === void 0 ? void 0 : options.download)
+                    ? `&download=${options.download === true ? '' : options.download}`
+                    : '';
+                return {
+                    data: data.map((datum) => (Object.assign(Object.assign({}, datum), { signedUrl: datum.signedURL
+                            ? encodeURI(`${this.url}${datum.signedURL}${downloadQueryParam}`)
+                            : null }))),
+                    error: null,
+                };
+            }
+            catch (error) {
+                if ((0, errors_1.isStorageError)(error)) {
+                    return { data: null, error };
+                }
+                throw error;
+            }
+        });
+    }
+    /**
+     * Downloads a file from a private bucket. For public buckets, make a request to the URL returned from `getPublicUrl` instead.
+     *
+     * @param path The full path and file name of the file to be downloaded. For example `folder/image.png`.
+     * @param options.transform Transform the asset before serving it to the client.
+     */
+    download(path, options) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const wantsTransformation = typeof (options === null || options === void 0 ? void 0 : options.transform) !== 'undefined';
+            const renderPath = wantsTransformation ? 'render/image/authenticated' : 'object';
+            const transformationQuery = this.transformOptsToQueryString((options === null || options === void 0 ? void 0 : options.transform) || {});
+            const queryString = transformationQuery ? `?${transformationQuery}` : '';
+            try {
+                const _path = this._getFinalPath(path);
+                const res = yield (0, fetch_1.get)(this.fetch, `${this.url}/${renderPath}/${_path}${queryString}`, {
+                    headers: this.headers,
+                    noResolveJson: true,
+                });
+                const data = yield res.blob();
+                return { data, error: null };
+            }
+            catch (error) {
+                if ((0, errors_1.isStorageError)(error)) {
+                    return { data: null, error };
+                }
+                throw error;
+            }
+        });
+    }
+    /**
+     * A simple convenience function to get the URL for an asset in a public bucket. If you do not want to use this function, you can construct the public URL by concatenating the bucket URL with the path to the asset.
+     * This function does not verify if the bucket is public. If a public URL is created for a bucket which is not public, you will not be able to download the asset.
+     *
+     * @param path The path and name of the file to generate the public URL for. For example `folder/image.png`.
+     * @param options.download Triggers the file as a download if set to true. Set this parameter as the name of the file if you want to trigger the download with a different filename.
+     * @param options.transform Transform the asset before serving it to the client.
+     */
+    getPublicUrl(path, options) {
+        const _path = this._getFinalPath(path);
+        const _queryString = [];
+        const downloadQueryParam = (options === null || options === void 0 ? void 0 : options.download)
+            ? `download=${options.download === true ? '' : options.download}`
+            : '';
+        if (downloadQueryParam !== '') {
+            _queryString.push(downloadQueryParam);
+        }
+        const wantsTransformation = typeof (options === null || options === void 0 ? void 0 : options.transform) !== 'undefined';
+        const renderPath = wantsTransformation ? 'render/image' : 'object';
+        const transformationQuery = this.transformOptsToQueryString((options === null || options === void 0 ? void 0 : options.transform) || {});
+        if (transformationQuery !== '') {
+            _queryString.push(transformationQuery);
+        }
+        let queryString = _queryString.join('&');
+        if (queryString !== '') {
+            queryString = `?${queryString}`;
+        }
+        return {
+            data: { publicUrl: encodeURI(`${this.url}/${renderPath}/public/${_path}${queryString}`) },
+        };
+    }
+    /**
+     * Deletes files within the same bucket
+     *
+     * @param paths An array of files to delete, including the path and file name. For example [`'folder/image.png'`].
+     */
+    remove(paths) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const data = yield (0, fetch_1.remove)(this.fetch, `${this.url}/object/${this.bucketId}`, { prefixes: paths }, { headers: this.headers });
+                return { data, error: null };
+            }
+            catch (error) {
+                if ((0, errors_1.isStorageError)(error)) {
+                    return { data: null, error };
+                }
+                throw error;
+            }
+        });
+    }
+    /**
+     * Get file metadata
+     * @param id the file id to retrieve metadata
+     */
+    // async getMetadata(
+    //   id: string
+    // ): Promise<
+    //   | {
+    //       data: Metadata
+    //       error: null
+    //     }
+    //   | {
+    //       data: null
+    //       error: StorageError
+    //     }
+    // > {
+    //   try {
+    //     const data = await get(this.fetch, `${this.url}/metadata/${id}`, { headers: this.headers })
+    //     return { data, error: null }
+    //   } catch (error) {
+    //     if (isStorageError(error)) {
+    //       return { data: null, error }
+    //     }
+    //     throw error
+    //   }
+    // }
+    /**
+     * Update file metadata
+     * @param id the file id to update metadata
+     * @param meta the new file metadata
+     */
+    // async updateMetadata(
+    //   id: string,
+    //   meta: Metadata
+    // ): Promise<
+    //   | {
+    //       data: Metadata
+    //       error: null
+    //     }
+    //   | {
+    //       data: null
+    //       error: StorageError
+    //     }
+    // > {
+    //   try {
+    //     const data = await post(
+    //       this.fetch,
+    //       `${this.url}/metadata/${id}`,
+    //       { ...meta },
+    //       { headers: this.headers }
+    //     )
+    //     return { data, error: null }
+    //   } catch (error) {
+    //     if (isStorageError(error)) {
+    //       return { data: null, error }
+    //     }
+    //     throw error
+    //   }
+    // }
+    /**
+     * Lists all the files within a bucket.
+     * @param path The folder path.
+     */
+    list(path, options, parameters) {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const body = Object.assign(Object.assign(Object.assign({}, DEFAULT_SEARCH_OPTIONS), options), { prefix: path || '' });
+                const data = yield (0, fetch_1.post)(this.fetch, `${this.url}/object/list/${this.bucketId}`, body, { headers: this.headers }, parameters);
+                return { data, error: null };
+            }
+            catch (error) {
+                if ((0, errors_1.isStorageError)(error)) {
+                    return { data: null, error };
+                }
+                throw error;
+            }
+        });
+    }
+    _getFinalPath(path) {
+        return `${this.bucketId}/${path}`;
+    }
+    _removeEmptyFolders(path) {
+        return path.replace(/^\/|\/$/g, '').replace(/\/+/g, '/');
+    }
+    transformOptsToQueryString(transform) {
+        const params = [];
+        if (transform.width) {
+            params.push(`width=${transform.width}`);
+        }
+        if (transform.height) {
+            params.push(`height=${transform.height}`);
+        }
+        if (transform.resize) {
+            params.push(`resize=${transform.resize}`);
+        }
+        if (transform.format) {
+            params.push(`format=${transform.format}`);
+        }
+        if (transform.quality) {
+            params.push(`quality=${transform.quality}`);
+        }
+        return params.join('&');
+    }
+}
+exports["default"] = StorageFileApi;
+//# sourceMappingURL=StorageFileApi.js.map
+
+/***/ }),
+
+/***/ 6155:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const functions_js_1 = __nccwpck_require__(7537);
+const postgrest_js_1 = __nccwpck_require__(9645);
+const realtime_js_1 = __nccwpck_require__(3960);
+const storage_js_1 = __nccwpck_require__(7319);
+const constants_1 = __nccwpck_require__(4028);
+const fetch_1 = __nccwpck_require__(7219);
+const helpers_1 = __nccwpck_require__(9113);
+const SupabaseAuthClient_1 = __nccwpck_require__(6556);
+const DEFAULT_GLOBAL_OPTIONS = {
+    headers: constants_1.DEFAULT_HEADERS,
+};
+const DEFAULT_DB_OPTIONS = {
     schema: 'public',
+};
+const DEFAULT_AUTH_OPTIONS = {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    multiTab: true,
-    headers: constants_1.DEFAULT_HEADERS,
+    flowType: 'implicit',
 };
+const DEFAULT_REALTIME_OPTIONS = {};
 /**
  * Supabase Client.
  *
@@ -6687,16 +8911,16 @@ class SupabaseClient {
      * Create a new client for use in the browser.
      * @param supabaseUrl The unique Supabase URL which is supplied when you create a new project in your project dashboard.
      * @param supabaseKey The unique Supabase Key which is supplied when you create a new project in your project dashboard.
-     * @param options.schema You can switch in between schemas. The schema needs to be on the list of exposed schemas inside Supabase.
-     * @param options.autoRefreshToken Set to "true" if you want to automatically refresh the token before expiring.
-     * @param options.persistSession Set to "true" if you want to automatically save the user session into local storage.
-     * @param options.detectSessionInUrl Set to "true" if you want to automatically detects OAuth grants in the URL and signs in the user.
-     * @param options.headers Any additional headers to send with each network request.
+     * @param options.db.schema You can switch in between schemas. The schema needs to be on the list of exposed schemas inside Supabase.
+     * @param options.auth.autoRefreshToken Set to "true" if you want to automatically refresh the token before expiring.
+     * @param options.auth.persistSession Set to "true" if you want to automatically save the user session into local storage.
+     * @param options.auth.detectSessionInUrl Set to "true" if you want to automatically detects OAuth grants in the URL and signs in the user.
      * @param options.realtime Options passed along to realtime-js constructor.
-     * @param options.multiTab Set to "false" if you want to disable multi-tab/window events.
-     * @param options.fetch A custom fetch implementation.
+     * @param options.global.fetch A custom fetch implementation.
+     * @param options.global.headers Any additional headers to send with each network request.
      */
     constructor(supabaseUrl, supabaseKey, options) {
+        var _a, _b, _c, _d, _e, _f, _g, _h;
         this.supabaseUrl = supabaseUrl;
         this.supabaseKey = supabaseKey;
         if (!supabaseUrl)
@@ -6704,39 +8928,37 @@ class SupabaseClient {
         if (!supabaseKey)
             throw new Error('supabaseKey is required.');
         const _supabaseUrl = (0, helpers_1.stripTrailingSlash)(supabaseUrl);
-        const settings = Object.assign(Object.assign({}, DEFAULT_OPTIONS), options);
-        this.restUrl = `${_supabaseUrl}/rest/v1`;
-        this.realtimeUrl = `${_supabaseUrl}/realtime/v1`.replace('http', 'ws');
+        this.realtimeUrl = `${_supabaseUrl}/realtime/v1`.replace(/^http/i, 'ws');
         this.authUrl = `${_supabaseUrl}/auth/v1`;
         this.storageUrl = `${_supabaseUrl}/storage/v1`;
-        const isPlatform = _supabaseUrl.match(/(supabase\.co)|(supabase\.in)/);
-        if (isPlatform) {
-            const urlParts = _supabaseUrl.split('.');
-            this.functionsUrl = `${urlParts[0]}.functions.${urlParts[1]}.${urlParts[2]}`;
-        }
-        else {
-            this.functionsUrl = `${_supabaseUrl}/functions/v1`;
-        }
-        this.schema = settings.schema;
-        this.multiTab = settings.multiTab;
-        this.fetch = settings.fetch;
-        this.headers = Object.assign(Object.assign({}, constants_1.DEFAULT_HEADERS), options === null || options === void 0 ? void 0 : options.headers);
-        this.shouldThrowOnError = settings.shouldThrowOnError || false;
-        this.auth = this._initSupabaseAuthClient(settings);
+        this.functionsUrl = `${_supabaseUrl}/functions/v1`;
+        // default storage key uses the supabase project ref as a namespace
+        const defaultStorageKey = `sb-${new URL(this.authUrl).hostname.split('.')[0]}-auth-token`;
+        const DEFAULTS = {
+            db: DEFAULT_DB_OPTIONS,
+            realtime: DEFAULT_REALTIME_OPTIONS,
+            auth: Object.assign(Object.assign({}, DEFAULT_AUTH_OPTIONS), { storageKey: defaultStorageKey }),
+            global: DEFAULT_GLOBAL_OPTIONS,
+        };
+        const settings = (0, helpers_1.applySettingDefaults)(options !== null && options !== void 0 ? options : {}, DEFAULTS);
+        this.storageKey = (_b = (_a = settings.auth) === null || _a === void 0 ? void 0 : _a.storageKey) !== null && _b !== void 0 ? _b : '';
+        this.headers = (_d = (_c = settings.global) === null || _c === void 0 ? void 0 : _c.headers) !== null && _d !== void 0 ? _d : {};
+        this.auth = this._initSupabaseAuthClient((_e = settings.auth) !== null && _e !== void 0 ? _e : {}, this.headers, (_f = settings.global) === null || _f === void 0 ? void 0 : _f.fetch);
+        this.fetch = (0, fetch_1.fetchWithAuth)(supabaseKey, this._getAccessToken.bind(this), (_g = settings.global) === null || _g === void 0 ? void 0 : _g.fetch);
         this.realtime = this._initRealtimeClient(Object.assign({ headers: this.headers }, settings.realtime));
+        this.rest = new postgrest_js_1.PostgrestClient(`${_supabaseUrl}/rest/v1`, {
+            headers: this.headers,
+            schema: (_h = settings.db) === null || _h === void 0 ? void 0 : _h.schema,
+            fetch: this.fetch,
+        });
         this._listenForAuthEvents();
-        this._listenForMultiTabEvents();
-        // In the future we might allow the user to pass in a logger to receive these events.
-        // this.realtime.onOpen(() => console.log('OPEN'))
-        // this.realtime.onClose(() => console.log('CLOSED'))
-        // this.realtime.onError((e: Error) => console.log('Socket error', e))
     }
     /**
      * Supabase Functions allows you to deploy and invoke edge functions.
      */
     get functions() {
         return new functions_js_1.FunctionsClient(this.functionsUrl, {
-            headers: this._getAuthHeaders(),
+            headers: this.headers,
             customFetch: this.fetch,
         });
     }
@@ -6744,181 +8966,129 @@ class SupabaseClient {
      * Supabase Storage allows you to manage user-generated content, such as photos or videos.
      */
     get storage() {
-        return new storage_js_1.SupabaseStorageClient(this.storageUrl, this._getAuthHeaders(), this.fetch);
+        return new storage_js_1.StorageClient(this.storageUrl, this.headers, this.fetch);
     }
     /**
-     * Perform a table operation.
+     * Perform a query on a table or a view.
      *
-     * @param table The table name to operate on.
+     * @param relation - The table or view name to query
      */
-    from(table) {
-        const url = `${this.restUrl}/${table}`;
-        return new SupabaseQueryBuilder_1.SupabaseQueryBuilder(url, {
-            headers: this._getAuthHeaders(),
-            schema: this.schema,
-            realtime: this.realtime,
-            table,
-            fetch: this.fetch,
-            shouldThrowOnError: this.shouldThrowOnError,
-        });
+    from(relation) {
+        return this.rest.from(relation);
+    }
+    /**
+     * Perform a query on a schema distinct from the default schema supplied via
+     * the `options.db.schema` constructor parameter.
+     *
+     * The schema needs to be on the list of exposed schemas inside Supabase.
+     *
+     * @param schema - The name of the schema to query
+     */
+    schema(schema) {
+        return this.rest.schema(schema);
     }
     /**
      * Perform a function call.
      *
-     * @param fn  The function name to call.
-     * @param params  The parameters to pass to the function call.
-     * @param head   When set to true, no data will be returned.
-     * @param count  Count algorithm to use to count rows in a table.
+     * @param fn - The function name to call
+     * @param args - The arguments to pass to the function call
+     * @param options - Named parameters
+     * @param options.head - When set to `true`, `data` will not be returned.
+     * Useful if you only need the count.
+     * @param options.count - Count algorithm to use to count rows returned by the
+     * function. Only applicable for [set-returning
+     * functions](https://www.postgresql.org/docs/current/functions-srf.html).
+     *
+     * `"exact"`: Exact but slow count algorithm. Performs a `COUNT(*)` under the
+     * hood.
+     *
+     * `"planned"`: Approximated but fast count algorithm. Uses the Postgres
+     * statistics under the hood.
+     *
+     * `"estimated"`: Uses exact count for low numbers and planned count for high
+     * numbers.
+     */
+    rpc(fn, args = {}, options) {
+        return this.rest.rpc(fn, args, options);
+    }
+    /**
+     * Creates a Realtime channel with Broadcast, Presence, and Postgres Changes.
+     *
+     * @param {string} name - The name of the Realtime channel.
+     * @param {Object} opts - The options to pass to the Realtime channel.
      *
      */
-    rpc(fn, params, { head = false, count = null, } = {}) {
-        const rest = this._initPostgRESTClient();
-        return rest.rpc(fn, params, { head, count });
+    channel(name, opts = { config: {} }) {
+        return this.realtime.channel(name, opts);
     }
     /**
-     * Closes and removes all subscriptions and returns a list of removed
-     * subscriptions and their errors.
+     * Returns all Realtime channels.
      */
-    removeAllSubscriptions() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const allSubs = this.getSubscriptions().slice();
-            const allSubPromises = allSubs.map((sub) => this.removeSubscription(sub));
-            const allRemovedSubs = yield Promise.all(allSubPromises);
-            return allRemovedSubs.map(({ error }, i) => {
-                return {
-                    data: { subscription: allSubs[i] },
-                    error,
-                };
-            });
-        });
+    getChannels() {
+        return this.realtime.getChannels();
     }
     /**
-     * Closes and removes a subscription and returns the number of open subscriptions.
+     * Unsubscribes and removes Realtime channel from Realtime client.
      *
-     * @param subscription The subscription you want to close and remove.
+     * @param {RealtimeChannel} channel - The name of the Realtime channel.
+     *
      */
-    removeSubscription(subscription) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const { error } = yield this._closeSubscription(subscription);
-            const allSubs = this.getSubscriptions();
-            const openSubCount = allSubs.filter((chan) => chan.isJoined()).length;
-            if (allSubs.length === 0)
-                yield this.realtime.disconnect();
-            return { data: { openSubscriptions: openSubCount }, error };
-        });
-    }
-    _closeSubscription(subscription) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let error = null;
-            if (!subscription.isClosed()) {
-                const { error: unsubError } = yield this._unsubscribeSubscription(subscription);
-                error = unsubError;
-            }
-            this.realtime.remove(subscription);
-            return { error };
-        });
-    }
-    _unsubscribeSubscription(subscription) {
-        return new Promise((resolve) => {
-            subscription
-                .unsubscribe()
-                .receive('ok', () => resolve({ error: null }))
-                .receive('error', (error) => resolve({ error }))
-                .receive('timeout', () => resolve({ error: new Error('timed out') }));
-        });
+    removeChannel(channel) {
+        return this.realtime.removeChannel(channel);
     }
     /**
-     * Returns an array of all your subscriptions.
+     * Unsubscribes and removes all Realtime channels from Realtime client.
      */
-    getSubscriptions() {
-        return this.realtime.channels;
+    removeAllChannels() {
+        return this.realtime.removeAllChannels();
     }
-    _initSupabaseAuthClient({ autoRefreshToken, persistSession, detectSessionInUrl, localStorage, headers, fetch, cookieOptions, multiTab, }) {
+    _getAccessToken() {
+        var _a, _b;
+        return __awaiter(this, void 0, void 0, function* () {
+            const { data } = yield this.auth.getSession();
+            return (_b = (_a = data.session) === null || _a === void 0 ? void 0 : _a.access_token) !== null && _b !== void 0 ? _b : null;
+        });
+    }
+    _initSupabaseAuthClient({ autoRefreshToken, persistSession, detectSessionInUrl, storage, storageKey, flowType, debug, }, headers, fetch) {
         const authHeaders = {
             Authorization: `Bearer ${this.supabaseKey}`,
             apikey: `${this.supabaseKey}`,
         };
         return new SupabaseAuthClient_1.SupabaseAuthClient({
             url: this.authUrl,
-            headers: Object.assign(Object.assign({}, headers), authHeaders),
+            headers: Object.assign(Object.assign({}, authHeaders), headers),
+            storageKey: storageKey,
             autoRefreshToken,
             persistSession,
             detectSessionInUrl,
-            localStorage,
+            storage,
+            flowType,
+            debug,
             fetch,
-            cookieOptions,
-            multiTab,
         });
     }
     _initRealtimeClient(options) {
-        return new realtime_js_1.RealtimeClient(this.realtimeUrl, Object.assign(Object.assign({}, options), { params: Object.assign(Object.assign({}, options === null || options === void 0 ? void 0 : options.params), { apikey: this.supabaseKey }) }));
-    }
-    _initPostgRESTClient() {
-        return new postgrest_js_1.PostgrestClient(this.restUrl, {
-            headers: this._getAuthHeaders(),
-            schema: this.schema,
-            fetch: this.fetch,
-            throwOnError: this.shouldThrowOnError,
-        });
-    }
-    _getAuthHeaders() {
-        var _a, _b;
-        const headers = Object.assign({}, this.headers);
-        const authBearer = (_b = (_a = this.auth.session()) === null || _a === void 0 ? void 0 : _a.access_token) !== null && _b !== void 0 ? _b : this.supabaseKey;
-        headers['apikey'] = this.supabaseKey;
-        headers['Authorization'] = headers['Authorization'] || `Bearer ${authBearer}`;
-        return headers;
-    }
-    _listenForMultiTabEvents() {
-        if (!this.multiTab || !(0, helpers_1.isBrowser)() || !(window === null || window === void 0 ? void 0 : window.addEventListener)) {
-            return null;
-        }
-        try {
-            return window === null || window === void 0 ? void 0 : window.addEventListener('storage', (e) => {
-                var _a, _b, _c;
-                if (e.key === constants_1.STORAGE_KEY) {
-                    const newSession = JSON.parse(String(e.newValue));
-                    const accessToken = (_b = (_a = newSession === null || newSession === void 0 ? void 0 : newSession.currentSession) === null || _a === void 0 ? void 0 : _a.access_token) !== null && _b !== void 0 ? _b : undefined;
-                    const previousAccessToken = (_c = this.auth.session()) === null || _c === void 0 ? void 0 : _c.access_token;
-                    if (!accessToken) {
-                        this._handleTokenChanged('SIGNED_OUT', accessToken, 'STORAGE');
-                    }
-                    else if (!previousAccessToken && accessToken) {
-                        this._handleTokenChanged('SIGNED_IN', accessToken, 'STORAGE');
-                    }
-                    else if (previousAccessToken !== accessToken) {
-                        this._handleTokenChanged('TOKEN_REFRESHED', accessToken, 'STORAGE');
-                    }
-                }
-            });
-        }
-        catch (error) {
-            console.error('_listenForMultiTabEvents', error);
-            return null;
-        }
+        return new realtime_js_1.RealtimeClient(this.realtimeUrl, Object.assign(Object.assign({}, options), { params: Object.assign({ apikey: this.supabaseKey }, options === null || options === void 0 ? void 0 : options.params) }));
     }
     _listenForAuthEvents() {
-        let { data } = this.auth.onAuthStateChange((event, session) => {
-            this._handleTokenChanged(event, session === null || session === void 0 ? void 0 : session.access_token, 'CLIENT');
+        let data = this.auth.onAuthStateChange((event, session) => {
+            this._handleTokenChanged(event, 'CLIENT', session === null || session === void 0 ? void 0 : session.access_token);
         });
         return data;
     }
-    _handleTokenChanged(event, token, source) {
+    _handleTokenChanged(event, source, token) {
         if ((event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') &&
             this.changedAccessToken !== token) {
             // Token has changed
-            this.realtime.setAuth(token);
-            // Ideally we should call this.auth.recoverSession() - need to make public
-            // to trigger a "SIGNED_IN" event on this client.
-            if (source == 'STORAGE')
-                this.auth.setAuth(token);
+            this.realtime.setAuth(token !== null && token !== void 0 ? token : null);
             this.changedAccessToken = token;
         }
-        else if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
+        else if (event === 'SIGNED_OUT') {
             // Token is removed
             this.realtime.setAuth(this.supabaseKey);
             if (source == 'STORAGE')
                 this.auth.signOut();
+            this.changedAccessToken = undefined;
         }
     }
 }
@@ -6927,7 +9097,7 @@ exports["default"] = SupabaseClient;
 
 /***/ }),
 
-/***/ 2440:
+/***/ 7465:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -6950,11 +9120,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.SupabaseClient = exports.createClient = void 0;
-const SupabaseClient_1 = __importDefault(__nccwpck_require__(2264));
-exports.SupabaseClient = SupabaseClient_1.default;
-__exportStar(__nccwpck_require__(9381), exports);
-__exportStar(__nccwpck_require__(4719), exports);
+exports.createClient = exports.SupabaseClient = exports.FunctionsError = exports.FunctionsRelayError = exports.FunctionsFetchError = exports.FunctionsHttpError = void 0;
+const SupabaseClient_1 = __importDefault(__nccwpck_require__(6155));
+__exportStar(__nccwpck_require__(7776), exports);
+var functions_js_1 = __nccwpck_require__(7537);
+Object.defineProperty(exports, "FunctionsHttpError", ({ enumerable: true, get: function () { return functions_js_1.FunctionsHttpError; } }));
+Object.defineProperty(exports, "FunctionsFetchError", ({ enumerable: true, get: function () { return functions_js_1.FunctionsFetchError; } }));
+Object.defineProperty(exports, "FunctionsRelayError", ({ enumerable: true, get: function () { return functions_js_1.FunctionsRelayError; } }));
+Object.defineProperty(exports, "FunctionsError", ({ enumerable: true, get: function () { return functions_js_1.FunctionsError; } }));
+__exportStar(__nccwpck_require__(3960), exports);
+var SupabaseClient_2 = __nccwpck_require__(6155);
+Object.defineProperty(exports, "SupabaseClient", ({ enumerable: true, get: function () { return __importDefault(SupabaseClient_2).default; } }));
 /**
  * Creates a new Supabase Client.
  */
@@ -6966,14 +9142,14 @@ exports.createClient = createClient;
 
 /***/ }),
 
-/***/ 1866:
+/***/ 6556:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SupabaseAuthClient = void 0;
-const gotrue_js_1 = __nccwpck_require__(9381);
+const gotrue_js_1 = __nccwpck_require__(7776);
 class SupabaseAuthClient extends gotrue_js_1.GoTrueClient {
     constructor(options) {
         super(options);
@@ -6984,139 +9160,109 @@ exports.SupabaseAuthClient = SupabaseAuthClient;
 
 /***/ }),
 
-/***/ 8342:
+/***/ 4028:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.SupabaseQueryBuilder = void 0;
-const postgrest_js_1 = __nccwpck_require__(3956);
-const SupabaseRealtimeClient_1 = __nccwpck_require__(1009);
-class SupabaseQueryBuilder extends postgrest_js_1.PostgrestQueryBuilder {
-    constructor(url, { headers = {}, schema, realtime, table, fetch, shouldThrowOnError, }) {
-        super(url, { headers, schema, fetch, shouldThrowOnError });
-        this._subscription = null;
-        this._realtime = realtime;
-        this._headers = headers;
-        this._schema = schema;
-        this._table = table;
-    }
-    /**
-     * Subscribe to realtime changes in your database.
-     * @param event The database event which you would like to receive updates for, or you can use the special wildcard `*` to listen to all changes.
-     * @param callback A callback that will handle the payload that is sent whenever your database changes.
-     */
-    on(event, callback) {
-        if (!this._realtime.isConnected()) {
-            this._realtime.connect();
-        }
-        if (!this._subscription) {
-            this._subscription = new SupabaseRealtimeClient_1.SupabaseRealtimeClient(this._realtime, this._headers, this._schema, this._table);
-        }
-        return this._subscription.on(event, callback);
-    }
-}
-exports.SupabaseQueryBuilder = SupabaseQueryBuilder;
-//# sourceMappingURL=SupabaseQueryBuilder.js.map
-
-/***/ }),
-
-/***/ 1009:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.SupabaseRealtimeClient = void 0;
-const realtime_js_1 = __nccwpck_require__(4719);
-class SupabaseRealtimeClient {
-    constructor(socket, headers, schema, tableName) {
-        const chanParams = {};
-        const topic = tableName === '*' ? `realtime:${schema}` : `realtime:${schema}:${tableName}`;
-        const userToken = headers['Authorization'].split(' ')[1];
-        if (userToken) {
-            chanParams['user_token'] = userToken;
-        }
-        this.subscription = socket.channel(topic, chanParams);
-    }
-    getPayloadRecords(payload) {
-        const records = {
-            new: {},
-            old: {},
-        };
-        if (payload.type === 'INSERT' || payload.type === 'UPDATE') {
-            records.new = realtime_js_1.Transformers.convertChangeData(payload.columns, payload.record);
-        }
-        if (payload.type === 'UPDATE' || payload.type === 'DELETE') {
-            records.old = realtime_js_1.Transformers.convertChangeData(payload.columns, payload.old_record);
-        }
-        return records;
-    }
-    /**
-     * The event you want to listen to.
-     *
-     * @param event The event
-     * @param callback A callback function that is called whenever the event occurs.
-     */
-    on(event, callback) {
-        this.subscription.on(event, (payload) => {
-            let enrichedPayload = {
-                schema: payload.schema,
-                table: payload.table,
-                commit_timestamp: payload.commit_timestamp,
-                eventType: payload.type,
-                new: {},
-                old: {},
-                errors: payload.errors,
-            };
-            enrichedPayload = Object.assign(Object.assign({}, enrichedPayload), this.getPayloadRecords(payload));
-            callback(enrichedPayload);
-        });
-        return this;
-    }
-    /**
-     * Enables the subscription.
-     */
-    subscribe(callback = () => { }) {
-        this.subscription.onError((e) => callback('SUBSCRIPTION_ERROR', e));
-        this.subscription.onClose(() => callback('CLOSED'));
-        this.subscription
-            .subscribe()
-            .receive('ok', () => callback('SUBSCRIBED'))
-            .receive('error', (e) => callback('SUBSCRIPTION_ERROR', e))
-            .receive('timeout', () => callback('RETRYING_AFTER_TIMEOUT'));
-        return this.subscription;
-    }
-}
-exports.SupabaseRealtimeClient = SupabaseRealtimeClient;
-//# sourceMappingURL=SupabaseRealtimeClient.js.map
-
-/***/ }),
-
-/***/ 2324:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.STORAGE_KEY = exports.DEFAULT_HEADERS = void 0;
+exports.DEFAULT_HEADERS = void 0;
 // constants.ts
-const version_1 = __nccwpck_require__(4852);
+const version_1 = __nccwpck_require__(3097);
 exports.DEFAULT_HEADERS = { 'X-Client-Info': `supabase-js/${version_1.version}` };
-exports.STORAGE_KEY = 'supabase.auth.token';
 //# sourceMappingURL=constants.js.map
 
 /***/ }),
 
-/***/ 9398:
+/***/ 7219:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.fetchWithAuth = exports.resolveHeadersConstructor = exports.resolveFetch = void 0;
+const cross_fetch_1 = __importStar(__nccwpck_require__(1489));
+const resolveFetch = (customFetch) => {
+    let _fetch;
+    if (customFetch) {
+        _fetch = customFetch;
+    }
+    else if (typeof fetch === 'undefined') {
+        _fetch = cross_fetch_1.default;
+    }
+    else {
+        _fetch = fetch;
+    }
+    return (...args) => _fetch(...args);
+};
+exports.resolveFetch = resolveFetch;
+const resolveHeadersConstructor = () => {
+    if (typeof Headers === 'undefined') {
+        return cross_fetch_1.Headers;
+    }
+    return Headers;
+};
+exports.resolveHeadersConstructor = resolveHeadersConstructor;
+const fetchWithAuth = (supabaseKey, getAccessToken, customFetch) => {
+    const fetch = (0, exports.resolveFetch)(customFetch);
+    const HeadersConstructor = (0, exports.resolveHeadersConstructor)();
+    return (input, init) => __awaiter(void 0, void 0, void 0, function* () {
+        var _a;
+        const accessToken = (_a = (yield getAccessToken())) !== null && _a !== void 0 ? _a : supabaseKey;
+        let headers = new HeadersConstructor(init === null || init === void 0 ? void 0 : init.headers);
+        if (!headers.has('apikey')) {
+            headers.set('apikey', supabaseKey);
+        }
+        if (!headers.has('Authorization')) {
+            headers.set('Authorization', `Bearer ${accessToken}`);
+        }
+        return fetch(input, Object.assign(Object.assign({}, init), { headers }));
+    });
+};
+exports.fetchWithAuth = fetchWithAuth;
+//# sourceMappingURL=fetch.js.map
+
+/***/ }),
+
+/***/ 9113:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
-// helpers.ts
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.isBrowser = exports.stripTrailingSlash = exports.uuid = void 0;
+exports.applySettingDefaults = exports.isBrowser = exports.stripTrailingSlash = exports.uuid = void 0;
 function uuid() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
         var r = (Math.random() * 16) | 0, v = c == 'x' ? r : (r & 0x3) | 0x8;
@@ -7130,23 +9276,34 @@ function stripTrailingSlash(url) {
 exports.stripTrailingSlash = stripTrailingSlash;
 const isBrowser = () => typeof window !== 'undefined';
 exports.isBrowser = isBrowser;
+function applySettingDefaults(options, defaults) {
+    const { db: dbOptions, auth: authOptions, realtime: realtimeOptions, global: globalOptions, } = options;
+    const { db: DEFAULT_DB_OPTIONS, auth: DEFAULT_AUTH_OPTIONS, realtime: DEFAULT_REALTIME_OPTIONS, global: DEFAULT_GLOBAL_OPTIONS, } = defaults;
+    return {
+        db: Object.assign(Object.assign({}, DEFAULT_DB_OPTIONS), dbOptions),
+        auth: Object.assign(Object.assign({}, DEFAULT_AUTH_OPTIONS), authOptions),
+        realtime: Object.assign(Object.assign({}, DEFAULT_REALTIME_OPTIONS), realtimeOptions),
+        global: Object.assign(Object.assign({}, DEFAULT_GLOBAL_OPTIONS), globalOptions),
+    };
+}
+exports.applySettingDefaults = applySettingDefaults;
 //# sourceMappingURL=helpers.js.map
 
 /***/ }),
 
-/***/ 4852:
+/***/ 3097:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.version = void 0;
-exports.version = '1.35.6';
+exports.version = '2.32.0';
 //# sourceMappingURL=version.js.map
 
 /***/ }),
 
-/***/ 9084:
+/***/ 8119:
 /***/ ((module) => {
 
 "use strict";
@@ -7188,25 +9345,25 @@ module.exports = { mask, unmask };
 
 /***/ }),
 
-/***/ 2459:
+/***/ 8268:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
 
 try {
-  module.exports = require(__nccwpck_require__.ab + "prebuilds/win32-x64/node.napi1.node");
+  module.exports = require(__nccwpck_require__.ab + "prebuilds/win32-x64/node.napi.node");
 } catch (e) {
-  module.exports = __nccwpck_require__(9084);
+  module.exports = __nccwpck_require__(8119);
 }
 
 
 /***/ }),
 
-/***/ 8624:
+/***/ 1489:
 /***/ ((module, exports, __nccwpck_require__) => {
 
-const nodeFetch = __nccwpck_require__(9608)
+const nodeFetch = __nccwpck_require__(5367)
 const realFetch = nodeFetch.default || nodeFetch
 
 const fetch = function (url, options) {
@@ -8112,7 +10269,7 @@ function plural(ms, n, name) {
 
 /***/ }),
 
-/***/ 9608:
+/***/ 5367:
 /***/ ((module, exports, __nccwpck_require__) => {
 
 "use strict";
@@ -9536,6 +11693,20 @@ const isDomainOrSubdomain = function isDomainOrSubdomain(destination, original) 
 };
 
 /**
+ * isSameProtocol reports whether the two provided URLs use the same protocol.
+ *
+ * Both domains must already be in canonical form.
+ * @param {string|URL} original
+ * @param {string|URL} destination
+ */
+const isSameProtocol = function isSameProtocol(destination, original) {
+	const orig = new URL$1(original).protocol;
+	const dest = new URL$1(destination).protocol;
+
+	return orig === dest;
+};
+
+/**
  * Fetch function
  *
  * @param   Mixed    url   Absolute url or Request instance
@@ -9566,7 +11737,7 @@ function fetch(url, opts) {
 			let error = new AbortError('The user aborted a request.');
 			reject(error);
 			if (request.body && request.body instanceof Stream.Readable) {
-				request.body.destroy(error);
+				destroyStream(request.body, error);
 			}
 			if (!response || !response.body) return;
 			response.body.emit('error', error);
@@ -9607,8 +11778,42 @@ function fetch(url, opts) {
 
 		req.on('error', function (err) {
 			reject(new FetchError(`request to ${request.url} failed, reason: ${err.message}`, 'system', err));
+
+			if (response && response.body) {
+				destroyStream(response.body, err);
+			}
+
 			finalize();
 		});
+
+		fixResponseChunkedTransferBadEnding(req, function (err) {
+			if (signal && signal.aborted) {
+				return;
+			}
+
+			if (response && response.body) {
+				destroyStream(response.body, err);
+			}
+		});
+
+		/* c8 ignore next 18 */
+		if (parseInt(process.version.substring(1)) < 14) {
+			// Before Node.js 14, pipeline() does not fully support async iterators and does not always
+			// properly handle when the socket close/end events are out of order.
+			req.on('socket', function (s) {
+				s.addListener('close', function (hadError) {
+					// if a data listener is still present we didn't end cleanly
+					const hasDataListener = s.listenerCount('data') > 0;
+
+					// if end happened before close but the socket didn't emit an error, do it now
+					if (response && hasDataListener && !hadError && !(signal && signal.aborted)) {
+						const err = new Error('Premature close');
+						err.code = 'ERR_STREAM_PREMATURE_CLOSE';
+						response.body.emit('error', err);
+					}
+				});
+			});
+		}
 
 		req.on('response', function (res) {
 			clearTimeout(reqTimeout);
@@ -9681,7 +11886,7 @@ function fetch(url, opts) {
 							size: request.size
 						};
 
-						if (!isDomainOrSubdomain(request.url, locationURL)) {
+						if (!isDomainOrSubdomain(request.url, locationURL) || !isSameProtocol(request.url, locationURL)) {
 							for (const name of ['authorization', 'www-authenticate', 'cookie', 'cookie2']) {
 								requestOpts.headers.delete(name);
 							}
@@ -9774,6 +11979,13 @@ function fetch(url, opts) {
 					response = new Response(body, response_options);
 					resolve(response);
 				});
+				raw.on('end', function () {
+					// some old IIS servers return zero-length OK deflate responses, so 'data' is never emitted.
+					if (!response) {
+						response = new Response(body, response_options);
+						resolve(response);
+					}
+				});
 				return;
 			}
 
@@ -9793,6 +12005,44 @@ function fetch(url, opts) {
 		writeToStream(req, request);
 	});
 }
+function fixResponseChunkedTransferBadEnding(request, errorCallback) {
+	let socket;
+
+	request.on('socket', function (s) {
+		socket = s;
+	});
+
+	request.on('response', function (response) {
+		const headers = response.headers;
+
+		if (headers['transfer-encoding'] === 'chunked' && !headers['content-length']) {
+			response.once('close', function (hadError) {
+				// tests for socket presence, as in some situations the
+				// the 'socket' event is not triggered for the request
+				// (happens in deno), avoids `TypeError`
+				// if a data listener is still present we didn't end cleanly
+				const hasDataListener = socket && socket.listenerCount('data') > 0;
+
+				if (hasDataListener && !hadError) {
+					const err = new Error('Premature close');
+					err.code = 'ERR_STREAM_PREMATURE_CLOSE';
+					errorCallback(err);
+				}
+			});
+		}
+	});
+}
+
+function destroyStream(stream, err) {
+	if (stream.destroy) {
+		stream.destroy(err);
+	} else {
+		// node < 8
+		stream.emit('error', err);
+		stream.end();
+	}
+}
+
 /**
  * Redirect code matching
  *
@@ -10330,7 +12580,7 @@ module.exports = function typedarrayToBuffer (arr) {
 
 /***/ }),
 
-/***/ 7705:
+/***/ 3905:
 /***/ ((module) => {
 
 "use strict";
@@ -10400,16 +12650,16 @@ module.exports = isValidUTF8;
 
 /***/ }),
 
-/***/ 5873:
+/***/ 8364:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
 "use strict";
 
 
 try {
-  module.exports = require(__nccwpck_require__.ab + "prebuilds/win32-x64/node.napi.node");
+  module.exports = require(__nccwpck_require__.ab + "prebuilds/win32-x64/node.napi1.node");
 } catch (e) {
-  module.exports = __nccwpck_require__(7705);
+  module.exports = __nccwpck_require__(3905);
 }
 
 
@@ -11960,7 +14210,7 @@ var utils = __nccwpck_require__(8053);
 var EventEmitter = (__nccwpck_require__(2361).EventEmitter);
 var WebSocketFrame = __nccwpck_require__(5609);
 var BufferList = __nccwpck_require__(6839);
-var isValidUTF8 = __nccwpck_require__(5873);
+var isValidUTF8 = __nccwpck_require__(8364);
 var bufferAllocUnsafe = utils.bufferAllocUnsafe;
 var bufferFromString = utils.bufferFromString;
 
@@ -12858,7 +15108,7 @@ function instrumentSocketForDebugging(connection, socket) {
  *  limitations under the License.
  ***********************************************************************/
 
-var bufferUtil = __nccwpck_require__(2459);
+var bufferUtil = __nccwpck_require__(8268);
 var bufferAllocUnsafe = (__nccwpck_require__(8053).bufferAllocUnsafe);
 
 const DECODE_HEADER = 1;

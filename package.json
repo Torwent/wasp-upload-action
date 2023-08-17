@@ -1,34 +1,41 @@
 {
-  "name": "wasp-upload-action",
-  "version": "1.0.0",
-  "description": "GitHub Action to upload simba scripts to waspscripts.com",
-  "main": "lib/index.js",
-  "scripts": {
-    "start": "ts-node src/index.ts",
-    "dev": "ts-node-dev src/index.ts",
-    "prod": "node dist/index.js",
-    "build": "tsc",
-    "package": "ncc build --source-map --license licenses.txt",
-    "watch": "tsc -w",
-    "test": "ts-node src/test.ts",
-    "dev-test": "ts-node-dev src/test.ts",
-    "all": "pnpm run build && pnpm run package"
-  },
-  "keywords": [],
-  "author": "Torwent",
-  "license": "GPL-3.0-or-later",
-  "dependencies": {
-    "@actions/core": "^1.9.1",
-    "@supabase/supabase-js": "^1.35.6",
-    "@vercel/ncc": "^0.34.0",
-    "fs": "0.0.1-security",
-    "glob": "^8.0.3",
-    "tslib": "^2.4.0"
-  },
-  "devDependencies": {
-    "@types/node": "^18.7.14",
-    "ts-node": "^10.9.1",
-    "ts-node-dev": "^2.0.0",
-    "typescript": "^4.8.2"
-  }
+	"name": "wasp-upload-action",
+	"version": "1.0.0",
+	"description": "GitHub Action to upload simba scripts to waspscripts.com",
+	"main": "lib/index.js",
+	"scripts": {
+		"start": "ts-node src/index.ts",
+		"dev": "ts-node-dev src/index.ts",
+		"prod": "node dist/index.js",
+		"build": "tsc",
+		"package": "ncc build --source-map --license licenses.txt",
+		"watch": "tsc -w",
+		"test": "ts-node src/test.ts",
+		"dev-test": "ts-node-dev src/test.ts",
+		"all": "pnpm run build && pnpm run package",
+		"lint": "prettier --plugin-search-dir . --check . && eslint .",
+		"format": "prettier --plugin-search-dir . --write ."
+	},
+	"keywords": [],
+	"author": "Torwent",
+	"license": "GPL-3.0-or-later",
+	"dependencies": {
+		"@actions/core": "^1.10.0",
+		"@supabase/supabase-js": "^2.32.0",
+		"@typescript-eslint/eslint-plugin": "^6.4.0",
+		"@typescript-eslint/parser": "^6.4.0",
+		"@vercel/ncc": "^0.34.0",
+		"fs": "0.0.1-security",
+		"glob": "^8.1.0"
+	},
+	"devDependencies": {
+		"@types/node": "^18.17.5",
+		"eslint": "^8.47.0",
+		"eslint-config-prettier": "^9.0.0",
+		"prettier": "^3.0.2",
+		"ts-node": "^10.9.1",
+		"ts-node-dev": "^2.0.0",
+		"tslib": "^2.6.1",
+		"typescript": "^4.9.5"
+	}
 }
