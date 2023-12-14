@@ -12,9 +12,6 @@ const MODIFIED_FILES = getInput("MODIFIED_FILES").split(/ /g)
 const REGEX_SCRIPT_ID =
 	/{\$DEFINE SCRIPT_ID := '[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}'}/
 
-const REGEX_SETTINGS = /.*begin\n.*Login.PlayerIndex.*:=.*((.+\n)+).*end;\n/
-const SETTINGS_REPLACE = "begin\n  Login.PlayerIndex := 0;\nend;\n"
-
 let workingDir = process.cwd() + "/"
 if (PATH !== "") workingDir += PATH + "/"
 
@@ -42,7 +39,6 @@ files.forEach((file) => {
 	let content = readFileSync(CURRENT_PATH, "utf8")
 	const MATCHES = content.match(REGEX_SCRIPT_ID)
 
-	content = content.replace(REGEX_SETTINGS, SETTINGS_REPLACE)
 	fs.writeFileSync(file, content, "utf8")
 
 	if (MATCHES == null) return
